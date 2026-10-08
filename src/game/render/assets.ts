@@ -3,10 +3,23 @@ import { Assets, type Spritesheet, type Texture } from 'pixi.js'
 export type EffectName =
   'explosion_1' | 'explosion_2' | 'explosion_3' | 'fire_1' | 'fire_2'
 
+const barNames = [
+  'health_frame',
+  'health_fill_green',
+  'health_fill_amber',
+  'health_fill_red',
+  'enemy_health_frame',
+  'enemy_health_fill_green',
+  'enemy_health_fill_red',
+] as const
+
+export type BarName = (typeof barNames)[number]
+
 export type GameAssets = {
   ships: Spritesheet
   tiles: Texture
   effects: Record<EffectName, Texture>
+  bars: Record<BarName, Texture>
 }
 
 const effectNames = [
@@ -71,6 +84,10 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
         alias: name,
         src: `/assets/png/${folder}/effects/${name}.png`,
       })),
+      ...barNames.map((name) => ({
+        alias: name,
+        src: `/assets/png/default/ui/hud/${name}.png`,
+      })),
     ],
     { onProgress, strategy: 'throw' },
   )
@@ -88,7 +105,14 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
     effects[name] = texture
   }
 
-  return { ships, tiles, effects }
+  const bars = {} as Record<BarName, Texture>
+  for (const name of barNames) {
+    const texture = loaded[name]
+    if (!isTexture(texture)) throw new Error(`hud ${name} is missing`)
+    bars[name] = texture
+  }
+
+  return { ships, tiles, effects, bars }
 }
 
 function isSpritesheet(

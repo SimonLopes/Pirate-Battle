@@ -4,27 +4,62 @@ import type { Enemy } from '../core/enemy.ts'
 import type { Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
 import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
-import { loadAssets, type GameAssets } from './assets.ts'
+import { loadAssets, type BarName, type GameAssets } from './assets.ts'
 
 export type Renderer = {
   draw(world: World): void
   destroy(): void
 }
 
+type BarStyle = {
+  frame: Texture
+  green: Texture
+  amber: Texture | null
+  red: Texture
+  artWidth: number
+  fillX: number
+  fillW: number
+  width: number
+  greenAbove: number
+  amberAbove: number
+}
+
+type ShipMark = {
+  hull: Sprite
+  bar: Container
+  fill: Sprite
+  crop: Texture
+  style: BarStyle
+}
+
+const playerHull = 1
+const chaserHull = 2
+const shooterHull = 3
+const hullSpan = 6
+const cannonBall = 'cannon_ball.png'
+const artBow = Math.PI / 2
+const barGap = 6
+const intactAbove = 2 / 3
+const wornAbove = 1 / 3
+
 export function createRenderer(stage: Container): Renderer {
   const root = new Container()
+  const arenaLayer = new Container()
+  const shipsLayer = new Container()
+  const ballLayer = new Container()
+  const barLayer = new Container()
+  root.addChild(arenaLayer, shipsLayer, ballLayer, barLayer)
   stage.addChild(root)
 
   const frames = new Map<number, Texture>()
+  const enemyMarks: ShipMark[] = []
+  const ballSprites: Sprite[] = []
   let destroyed = false
   let ready = false
   let assets: GameAssets | null = null
-  let shipSprite: Sprite | null = null
   let ballTexture: Texture | null = null
-  let chaserTexture: Texture | null = null
-  let shooterTexture: Texture | null = null
-  const ballSprites: Sprite[] = []
-  const enemySprites: Sprite[] = []
+  let playerMark: ShipMark | null = null
+  let enemyBars: BarStyle | null = null
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -42,28 +77,36 @@ export function createRenderer(stage: Container): Renderer {
       if (!ready) {
         if (!assets) return
         ready = true
-        paintArena(root, assets.tiles, frames, world.config.arena)
-        shipSprite = paintShip(root, assets.ships)
+        paintArena(arenaLayer, assets.tiles, frames, world.config.arena)
         ballTexture = cannonBallTexture(assets.ships)
-        chaserTexture = shipTexture(assets.ships, chaserShip)
-        shooterTexture = shipTexture(assets.ships, shooterShip)
+        playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
+        enemyBars = enemyStyle(assets.bars)
       }
-      if (shipSprite) placeShip(shipSprite, world.player)
-      if (ballTexture) placeBalls(root, ballTexture, ballSprites, world.balls)
-      if (chaserTexture && shooterTexture) {
-        placeEnemies(
-          root,
-          chaserTexture,
-          shooterTexture,
-          enemySprites,
-          world.enemies,
-        )
-      }
+      if (!assets || !playerMark || !ballTexture || !enemyBars) return
+      placeMark(
+        playerMark,
+        world.player,
+        world.config.ships.player.hp,
+        playerHull,
+        assets.ships,
+      )
+      placeEnemies(
+        shipsLayer,
+        barLayer,
+        assets.ships,
+        enemyBars,
+        enemyMarks,
+        world,
+      )
+      placeBalls(ballLayer, ballTexture, ballSprites, world.balls)
     },
     destroy() {
       if (destroyed) return
       destroyed = true
+      const crops = enemyMarks.map((mark) => mark.crop)
+      if (playerMark) crops.push(playerMark.crop)
       root.destroy({ children: true })
+      for (const crop of crops) crop.destroy(false)
       for (const texture of frames.values()) texture.destroy(false)
       frames.clear()
     },
@@ -107,17 +150,136 @@ function paintArena(
   }
 }
 
-const playerShip = 'ship_1.png'
-const chaserShip = 'ship_2.png'
-const shooterShip = 'ship_3.png'
-const cannonBall = 'cannon_ball.png'
-const artBow = Math.PI / 2
+function playerStyle(bars: Record<BarName, Texture>): BarStyle {
+  return {
+    frame: bars.health_frame,
+    green: bars.health_fill_green,
+    amber: bars.health_fill_amber,
+    red: bars.health_fill_red,
+    artWidth: 256,
+    fillX: 30,
+    fillW: 196,
+    width: 96,
+    greenAbove: intactAbove,
+    amberAbove: wornAbove,
+  }
+}
 
-function paintShip(root: Container, sheet: GameAssets['ships']): Sprite {
-  const sprite = new Sprite(shipTexture(sheet, playerShip))
-  sprite.anchor.set(0.5)
-  root.addChild(sprite)
-  return sprite
+function enemyStyle(bars: Record<BarName, Texture>): BarStyle {
+  return {
+    frame: bars.enemy_health_frame,
+    green: bars.enemy_health_fill_green,
+    amber: null,
+    red: bars.enemy_health_fill_red,
+    artWidth: 160,
+    fillX: 24,
+    fillW: 112,
+    width: 72,
+    greenAbove: 0.5,
+    amberAbove: 0,
+  }
+}
+
+function createMark(
+  ships: Container,
+  bars: Container,
+  style: BarStyle,
+): ShipMark {
+  const hull = new Sprite()
+  hull.anchor.set(0.5)
+  ships.addChild(hull)
+
+  const crop = new Texture({
+    source: style.green.source,
+    frame: new Rectangle(0, 0, style.frame.width, style.frame.height),
+    dynamic: true,
+  })
+  const bar = new Container()
+  const frame = new Sprite(style.frame)
+  const fill = new Sprite(crop)
+  bar.addChild(frame, fill)
+  bar.scale.set(style.width / style.frame.width)
+  bars.addChild(bar)
+  return { hull, bar, fill, crop, style }
+}
+
+function placeMark(
+  mark: ShipMark,
+  ship: Ship,
+  maxHp: number,
+  hullBase: number,
+  sheet: GameAssets['ships'],
+): void {
+  const ratio = maxHp > 0 ? Math.min(1, Math.max(0, ship.hp / maxHp)) : 0
+  mark.hull.visible = true
+  mark.bar.visible = true
+  mark.hull.texture = hullTexture(sheet, hullBase, ratio)
+  mark.hull.position.set(ship.x, ship.y)
+  mark.hull.rotation = ship.heading - artBow
+  const texW = mark.style.frame.width
+  const texH = mark.style.frame.height
+  clipFill(mark, ratio, texW, texH)
+  const scale = mark.bar.scale.x
+  mark.bar.rotation = 0
+  mark.bar.position.set(
+    ship.x - (texW * scale) / 2,
+    ship.y - mark.hull.height / 2 - barGap - texH * scale,
+  )
+}
+
+function clipFill(
+  mark: ShipMark,
+  ratio: number,
+  texW: number,
+  texH: number,
+): void {
+  const clip = fillClip(mark.style, ratio, texW)
+  const crop = mark.crop
+  const next = pickFill(mark.style, ratio)
+  mark.fill.visible = clip > 0
+  if (clip <= 0) return
+  let dirty = crop.frame.width !== clip || crop.frame.height !== texH
+  if (crop.source !== next.source) {
+    crop.source = next.source
+    dirty = true
+  }
+  if (!dirty) return
+  crop.frame.width = clip
+  crop.frame.height = texH
+  crop.update()
+}
+
+function fillClip(style: BarStyle, ratio: number, texW: number): number {
+  if (ratio <= 0) return 0
+  if (ratio >= 1) return texW
+  const unit = texW / style.artWidth
+  return (style.fillX + style.fillW * ratio) * unit
+}
+
+function pickFill(style: BarStyle, ratio: number): Texture {
+  if (ratio > style.greenAbove) return style.green
+  if (style.amber && ratio > style.amberAbove) return style.amber
+  return style.red
+}
+
+function hullStage(ratio: number): number {
+  if (ratio <= 0) return 3
+  if (ratio <= wornAbove) return 2
+  if (ratio <= intactAbove) return 1
+  return 0
+}
+
+function hullTexture(
+  sheet: GameAssets['ships'],
+  base: number,
+  ratio: number,
+): Texture {
+  return shipTexture(sheet, `ship_${base + hullStage(ratio) * hullSpan}.png`)
+}
+
+function hideMark(mark: ShipMark): void {
+  mark.hull.visible = false
+  mark.bar.visible = false
 }
 
 function shipTexture(sheet: GameAssets['ships'], name: string): Texture {
@@ -126,41 +288,42 @@ function shipTexture(sheet: GameAssets['ships'], name: string): Texture {
   return texture
 }
 
-function placeShip(sprite: Sprite, ship: Ship): void {
-  sprite.position.set(ship.x, ship.y)
-  sprite.rotation = ship.heading - artBow
-}
-
 function cannonBallTexture(sheet: GameAssets['ships']): Texture {
   return shipTexture(sheet, cannonBall)
 }
 
 function placeEnemies(
-  root: Container,
-  chaserTexture: Texture,
-  shooterTexture: Texture,
-  sprites: Sprite[],
-  enemies: readonly Enemy[],
+  ships: Container,
+  bars: Container,
+  sheet: GameAssets['ships'],
+  style: BarStyle,
+  marks: ShipMark[],
+  world: World,
 ): void {
-  while (sprites.length < enemies.length) {
-    const sprite = new Sprite(chaserTexture)
-    sprite.anchor.set(0.5)
-    root.addChild(sprite)
-    sprites.push(sprite)
+  const enemies = world.enemies
+  while (marks.length < enemies.length) {
+    marks.push(createMark(ships, bars, style))
   }
-  for (let i = 0; i < sprites.length; i += 1) {
-    const sprite = sprites[i]
-    if (!sprite) continue
+  for (let i = 0; i < marks.length; i += 1) {
+    const mark = marks[i]
+    if (!mark) continue
     const enemy = enemies[i]
     if (!enemy) {
-      sprite.visible = false
+      hideMark(mark)
       continue
     }
-    sprite.visible = true
-    sprite.texture = enemy.type === 'chaser' ? chaserTexture : shooterTexture
-    sprite.position.set(enemy.x, enemy.y)
-    sprite.rotation = enemy.heading - artBow
+    placeMark(mark, enemy, maxHp(world, enemy), hullBase(enemy), sheet)
   }
+}
+
+function maxHp(world: World, enemy: Enemy): number {
+  return enemy.type === 'chaser'
+    ? world.config.ships.chaser.hp
+    : world.config.ships.shooter.hp
+}
+
+function hullBase(enemy: Enemy): number {
+  return enemy.type === 'chaser' ? chaserHull : shooterHull
 }
 
 function placeBalls(
