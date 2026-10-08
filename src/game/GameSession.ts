@@ -191,7 +191,9 @@ export class GameSession {
 
   private present(): void {
     if (!this.ticking && this.world.status !== 'ended') return
-    if (!this.destroyed) this.renderer.draw(this.world)
+    if (!this.destroyed) {
+      this.renderer.draw(this.world, this.app.ticker.elapsedMS / 1000)
+    }
     this.publish()
     if (this.endAnnounced || this.world.status !== 'ended') return
     this.endAnnounced = true

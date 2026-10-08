@@ -5,9 +5,10 @@ import type { Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
 import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
 import { loadAssets, type BarName, type GameAssets } from './assets.ts'
+import { createEffects, type Effects } from './effects.ts'
 
 export type Renderer = {
-  draw(world: World): void
+  draw(world: World, dt: number): void
   destroy(): void
 }
 
@@ -26,6 +27,7 @@ type BarStyle = {
 
 type ShipMark = {
   hull: Sprite
+  flames: Sprite[]
   bar: Container
   fill: Sprite
   crop: Texture
@@ -41,14 +43,23 @@ const artBow = Math.PI / 2
 const barGap = 6
 const intactAbove = 2 / 3
 const wornAbove = 1 / 3
+const flameSpots = [
+  { x: -8, y: 22 },
+  { x: 10, y: 36 },
+]
+const flameSizes = [
+  { w: 14, h: 30 },
+  { w: 10, h: 22 },
+]
 
 export function createRenderer(stage: Container): Renderer {
   const root = new Container()
   const arenaLayer = new Container()
   const shipsLayer = new Container()
   const ballLayer = new Container()
+  const effectLayer = new Container()
   const barLayer = new Container()
-  root.addChild(arenaLayer, shipsLayer, ballLayer, barLayer)
+  root.addChild(arenaLayer, shipsLayer, ballLayer, effectLayer, barLayer)
   stage.addChild(root)
 
   const frames = new Map<number, Texture>()
@@ -60,6 +71,7 @@ export function createRenderer(stage: Container): Renderer {
   let ballTexture: Texture | null = null
   let playerMark: ShipMark | null = null
   let enemyBars: BarStyle | null = null
+  let fx: Effects | null = null
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -72,7 +84,7 @@ export function createRenderer(stage: Container): Renderer {
   )
 
   return {
-    draw(world) {
+    draw(world, dt) {
       if (destroyed) return
       if (!ready) {
         if (!assets) return
@@ -81,28 +93,36 @@ export function createRenderer(stage: Container): Renderer {
         ballTexture = cannonBallTexture(assets.ships)
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
         enemyBars = enemyStyle(assets.bars)
+        fx = createEffects(effectLayer, assets.effects)
+        fx.prime(world)
       }
-      if (!assets || !playerMark || !ballTexture || !enemyBars) return
+      if (!assets || !playerMark || !ballTexture || !enemyBars || !fx) return
+      fx.sync(world, dt)
       placeMark(
         playerMark,
         world.player,
         world.config.ships.player.hp,
         playerHull,
         assets.ships,
+        assets.effects,
+        fx,
       )
       placeEnemies(
         shipsLayer,
         barLayer,
         assets.ships,
+        assets.effects,
         enemyBars,
         enemyMarks,
         world,
+        fx,
       )
       placeBalls(ballLayer, ballTexture, ballSprites, world.balls)
     },
     destroy() {
       if (destroyed) return
       destroyed = true
+      fx?.destroy()
       const crops = enemyMarks.map((mark) => mark.crop)
       if (playerMark) crops.push(playerMark.crop)
       root.destroy({ children: true })
@@ -187,6 +207,14 @@ function createMark(
 ): ShipMark {
   const hull = new Sprite()
   hull.anchor.set(0.5)
+  const flames = flameSpots.map((spot) => {
+    const flame = new Sprite()
+    flame.anchor.set(0.5, 1)
+    flame.position.set(spot.x, spot.y)
+    flame.visible = false
+    hull.addChild(flame)
+    return flame
+  })
   ships.addChild(hull)
 
   const crop = new Texture({
@@ -200,7 +228,7 @@ function createMark(
   bar.addChild(frame, fill)
   bar.scale.set(style.width / style.frame.width)
   bars.addChild(bar)
-  return { hull, bar, fill, crop, style }
+  return { hull, flames, bar, fill, crop, style }
 }
 
 function placeMark(
@@ -209,21 +237,26 @@ function placeMark(
   maxHp: number,
   hullBase: number,
   sheet: GameAssets['ships'],
+  effects: GameAssets['effects'],
+  fx: Effects,
 ): void {
   const ratio = maxHp > 0 ? Math.min(1, Math.max(0, ship.hp / maxHp)) : 0
   mark.hull.visible = true
   mark.bar.visible = true
   mark.hull.texture = hullTexture(sheet, hullBase, ratio)
+  mark.hull.tint = fx.tint(ship)
   mark.hull.position.set(ship.x, ship.y)
   mark.hull.rotation = ship.heading - artBow
+  placeFlames(mark, ratio > 0 && ratio <= wornAbove, fx.flameFrame(), effects)
   const texW = mark.style.frame.width
   const texH = mark.style.frame.height
   clipFill(mark, ratio, texW, texH)
   const scale = mark.bar.scale.x
+  const hullH = mark.hull.texture.height
   mark.bar.rotation = 0
   mark.bar.position.set(
     ship.x - (texW * scale) / 2,
-    ship.y - mark.hull.height / 2 - barGap - texH * scale,
+    ship.y - hullH / 2 - barGap - texH * scale,
   )
 }
 
@@ -277,9 +310,34 @@ function hullTexture(
   return shipTexture(sheet, `ship_${base + hullStage(ratio) * hullSpan}.png`)
 }
 
+function placeFlames(
+  mark: ShipMark,
+  burning: boolean,
+  frame: 0 | 1,
+  effects: GameAssets['effects'],
+): void {
+  for (let i = 0; i < mark.flames.length; i += 1) {
+    const flame = mark.flames[i]
+    if (!flame) continue
+    if (!burning) {
+      flame.visible = false
+      continue
+    }
+    const slot = (frame + i) % 2 === 0 ? 0 : 1
+    const size = flameSizes[slot]
+    if (!size) continue
+    flame.texture = slot === 0 ? effects.fire_1 : effects.fire_2
+    flame.width = size.w
+    flame.height = size.h
+    flame.visible = true
+  }
+}
+
 function hideMark(mark: ShipMark): void {
   mark.hull.visible = false
+  mark.hull.tint = 0xffffff
   mark.bar.visible = false
+  for (const flame of mark.flames) flame.visible = false
 }
 
 function shipTexture(sheet: GameAssets['ships'], name: string): Texture {
@@ -296,9 +354,11 @@ function placeEnemies(
   ships: Container,
   bars: Container,
   sheet: GameAssets['ships'],
+  effects: GameAssets['effects'],
   style: BarStyle,
   marks: ShipMark[],
   world: World,
+  fx: Effects,
 ): void {
   const enemies = world.enemies
   while (marks.length < enemies.length) {
@@ -312,7 +372,15 @@ function placeEnemies(
       hideMark(mark)
       continue
     }
-    placeMark(mark, enemy, maxHp(world, enemy), hullBase(enemy), sheet)
+    placeMark(
+      mark,
+      enemy,
+      maxHp(world, enemy),
+      hullBase(enemy),
+      sheet,
+      effects,
+      fx,
+    )
   }
 }
 
