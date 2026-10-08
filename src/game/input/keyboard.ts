@@ -1,7 +1,9 @@
-import { clearActions, type Actions } from '../core/actions.ts'
+import type { Actions } from '../core/actions.ts'
+import type { TouchBindings } from './touch.ts'
 
 export type Keyboard = {
   clear(): void
+  sync(): void
   destroy(): void
 }
 
@@ -33,11 +35,16 @@ const bindings: Record<string, Binding> = {
 
 export function createKeyboard(
   actions: Actions,
+  touch: TouchBindings,
   onPause: () => void,
   onPlay: () => void,
 ): Keyboard {
   const held = new Set<string>()
   let destroyed = false
+
+  const sync = () => {
+    apply(actions, held, touch)
+  }
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (destroyed) return
@@ -51,7 +58,7 @@ export function createKeyboard(
     }
     onPlay()
     held.add(event.code)
-    apply(actions, held)
+    sync()
   }
 
   const onKeyUp = (event: KeyboardEvent) => {
@@ -61,7 +68,7 @@ export function createKeyboard(
     event.preventDefault()
     if (binding === 'pause') return
     held.delete(event.code)
-    apply(actions, held)
+    sync()
   }
 
   window.addEventListener('keydown', onKeyDown)
@@ -70,8 +77,9 @@ export function createKeyboard(
   return {
     clear() {
       held.clear()
-      clearActions(actions)
+      sync()
     },
+    sync,
     destroy() {
       if (destroyed) return
       destroyed = true
@@ -82,17 +90,21 @@ export function createKeyboard(
   }
 }
 
-function apply(actions: Actions, held: ReadonlySet<string>): void {
-  const forward = held.has('KeyW') || held.has('ArrowUp')
+function apply(
+  actions: Actions,
+  held: ReadonlySet<string>,
+  touch: TouchBindings,
+): void {
+  const forward = held.has('KeyW') || held.has('ArrowUp') || touch.forward
   const reverse = held.has('KeyS') || held.has('ArrowDown')
   if (forward === reverse) actions.thrust = 0
   else if (forward) actions.thrust = 1
   else actions.thrust = -1
-  actions.fireFront = held.has('Space')
-  actions.fireLeft = held.has('KeyQ')
-  actions.fireRight = held.has('KeyE')
-  const left = held.has('KeyA') || held.has('ArrowLeft')
-  const right = held.has('KeyD') || held.has('ArrowRight')
+  actions.fireFront = held.has('Space') || touch.fireFront
+  actions.fireLeft = held.has('KeyQ') || touch.fireLeft
+  actions.fireRight = held.has('KeyE') || touch.fireRight
+  const left = held.has('KeyA') || held.has('ArrowLeft') || touch.turnLeft
+  const right = held.has('KeyD') || held.has('ArrowRight') || touch.turnRight
   if (left === right) actions.turn = 0
   else if (left) actions.turn = -1
   else actions.turn = 1

@@ -10,6 +10,11 @@ import {
 } from './core/world.ts'
 import type { HudStore } from './hud/store.ts'
 import { createKeyboard, type Keyboard } from './input/keyboard.ts'
+import {
+  idleTouch,
+  type TouchBinding,
+  type TouchBindings,
+} from './input/touch.ts'
 import { islands } from './map.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 
@@ -17,6 +22,7 @@ export class GameSession {
   readonly config: GameConfig
   readonly world: World
   readonly actions: Actions
+  readonly touch: TouchBindings
 
   private readonly app: Application
   private readonly hud: HudStore
@@ -44,6 +50,7 @@ export class GameSession {
       islands.map((island) => island.collider),
     )
     this.actions = idleActions()
+    this.touch = idleTouch()
     this.renderer = createRenderer(app.stage)
     document.addEventListener('visibilitychange', this.onHide)
     window.addEventListener('blur', this.onBlur)
@@ -54,12 +61,14 @@ export class GameSession {
     this.started = true
     this.keyboard = createKeyboard(
       this.actions,
+      this.touch,
       () => {
         if (this.world.status === 'paused') this.resume()
         else this.pause()
       },
       () => this.resume(),
     )
+    this.keyboard.sync()
     this.ticking = true
     this.accumulator = 0
     this.discard = true
@@ -94,6 +103,35 @@ export class GameSession {
     this.app.ticker.start()
     this.publish()
     this.hud.announce('')
+  }
+
+  setTouch(binding: TouchBinding, down: boolean): void {
+    if (this.destroyed) return
+    if (this.touch[binding] === down) return
+    this.touch[binding] = down
+    this.keyboard?.sync()
+  }
+
+  releaseTouch(): void {
+    if (this.destroyed) return
+    const touch = this.touch
+    if (
+      !touch.forward &&
+      !touch.turnLeft &&
+      !touch.turnRight &&
+      !touch.fireFront &&
+      !touch.fireLeft &&
+      !touch.fireRight
+    ) {
+      return
+    }
+    touch.forward = false
+    touch.turnLeft = false
+    touch.turnRight = false
+    touch.fireFront = false
+    touch.fireLeft = false
+    touch.fireRight = false
+    this.keyboard?.sync()
   }
 
   restart(): void {

@@ -3,6 +3,7 @@ import {
   useRef,
   useSyncExternalStore,
   type CSSProperties,
+  type Ref,
 } from 'react'
 import type { HudStore } from './store.ts'
 
@@ -98,20 +99,28 @@ const resumeButton: CSSProperties = {
 export function Hud({
   store,
   onResume,
+  barRef,
 }: {
   store: HudStore
   onResume: () => void
+  barRef: Ref<HTMLDivElement>
 }) {
   return (
     <>
-      <HudScore store={store} />
+      <HudScore store={store} barRef={barRef} />
       <HudNotice store={store} />
       <PauseDialog store={store} onResume={onResume} />
     </>
   )
 }
 
-function HudScore({ store }: { store: HudStore }) {
+function HudScore({
+  store,
+  barRef,
+}: {
+  store: HudStore
+  barRef: Ref<HTMLDivElement>
+}) {
   const view = useSyncExternalStore(
     store.subscribe,
     store.getView,
@@ -119,7 +128,7 @@ function HudScore({ store }: { store: HudStore }) {
   )
 
   return (
-    <div style={scoreboard} inert={view.status === 'paused'}>
+    <div ref={barRef} style={scoreboard} inert={view.status === 'paused'}>
       <p style={figure}>Score {view.score}</p>
       <p style={figure}>
         Time left{' '}
