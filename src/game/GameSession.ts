@@ -1,7 +1,8 @@
 import { UPDATE_PRIORITY, type Application } from 'pixi.js'
 import type { GameConfig } from './config.ts'
-import { clearActions, idleActions, type Actions } from './core/actions.ts'
+import { idleActions, type Actions } from './core/actions.ts'
 import { createWorld, step, type World } from './core/world.ts'
+import { createKeyboard, type Keyboard } from './input/keyboard.ts'
 import { islands } from './map.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 
@@ -12,6 +13,7 @@ export class GameSession {
 
   private readonly app: Application
   private readonly renderer: Renderer
+  private keyboard: Keyboard | null = null
   private accumulator = 0
   private started = false
   private running = false
@@ -34,6 +36,7 @@ export class GameSession {
   start(): void {
     if (this.destroyed || this.started) return
     this.started = true
+    this.keyboard = createKeyboard(this.actions, () => this.pause())
     this.running = true
     this.accumulator = 0
     this.discard = true
@@ -47,13 +50,13 @@ export class GameSession {
     this.running = false
     this.accumulator = 0
     this.discard = true
-    clearActions(this.actions)
+    this.keyboard?.clear()
     this.app.ticker.stop()
   }
 
   resume(): void {
     if (this.destroyed || !this.started || this.running) return
-    clearActions(this.actions)
+    this.keyboard?.clear()
     this.accumulator = 0
     this.discard = true
     this.running = true
@@ -65,6 +68,8 @@ export class GameSession {
     this.destroyed = true
     this.running = false
     this.app.ticker.remove(this.onTick)
+    this.keyboard?.destroy()
+    this.keyboard = null
     document.removeEventListener('visibilitychange', this.onHide)
     window.removeEventListener('blur', this.onBlur)
     this.renderer.destroy()
