@@ -13,12 +13,7 @@ export type Box = {
 }
 
 export type TouchBinding =
-  | 'forward'
-  | 'turnLeft'
-  | 'turnRight'
-  | 'fireFront'
-  | 'fireLeft'
-  | 'fireRight'
+  'forward' | 'turnLeft' | 'turnRight' | 'fireFront' | 'fireLeft' | 'fireRight'
 
 export type TouchBindings = Record<TouchBinding, boolean>
 
@@ -30,6 +25,7 @@ export type TouchLayout = {
   fireFront: Box
   fireLeft: Box
   fireRight: Box
+  pause: Box
 }
 
 export const zeroInsets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }
@@ -96,15 +92,15 @@ function fits(
   safe: Insets,
 ): boolean {
   if (sides) {
-    const columnH = size * 3 + gap * 2
+    const columnH = size * 4 + gap * 3
     if (hudHeight + pad + columnH + pad + safe.bottom > viewH) return false
     const left = Math.max(safe.left, edge)
     const right = viewW - Math.max(safe.right, edge) - size
     return left + size + pad <= right
   }
   const rowW = size * 3 + gap * 2
-  const y = viewH - Math.max(safe.bottom, edge) - pad - size
-  if (y < hudHeight + pad) return false
+  const pauseY = viewH - Math.max(safe.bottom, edge) - pad - size * 2 - gap
+  if (pauseY < hudHeight + pad) return false
   const left = Math.max(safe.left, edge)
   const right = viewW - Math.max(safe.right, edge) - rowW
   return left + rowW + pad <= right
@@ -118,10 +114,15 @@ function sideLayout(
   safe: Insets,
   arena: { width: number; height: number },
 ): TouchLayout {
-  const columnH = size * 3 + gap * 2
-  const y = Math.max(
+  const leftH = size * 3 + gap * 2
+  const rightH = size * 4 + gap * 3
+  const yLeft = Math.max(
     hudHeight + pad,
-    viewH - Math.max(safe.bottom, edge) - pad - columnH,
+    viewH - Math.max(safe.bottom, edge) - pad - leftH,
+  )
+  const yRight = Math.max(
+    hudHeight + pad,
+    viewH - Math.max(safe.bottom, edge) - pad - rightH,
   )
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - size
@@ -133,14 +134,16 @@ function sideLayout(
     insets.left = leftLimit
     insets.right = viewW - rightLimit
   }
+  const step = size + gap
   return {
     insets,
-    forward: { x: leftX, y, w: size, h: size },
-    turnLeft: { x: leftX, y: y + size + gap, w: size, h: size },
-    turnRight: { x: leftX, y: y + (size + gap) * 2, w: size, h: size },
-    fireFront: { x: rightX, y, w: size, h: size },
-    fireLeft: { x: rightX, y: y + size + gap, w: size, h: size },
-    fireRight: { x: rightX, y: y + (size + gap) * 2, w: size, h: size },
+    forward: { x: leftX, y: yLeft, w: size, h: size },
+    turnLeft: { x: leftX, y: yLeft + step, w: size, h: size },
+    turnRight: { x: leftX, y: yLeft + step * 2, w: size, h: size },
+    pause: { x: rightX, y: yRight, w: size, h: size },
+    fireFront: { x: rightX, y: yRight + step, w: size, h: size },
+    fireLeft: { x: rightX, y: yRight + step * 2, w: size, h: size },
+    fireRight: { x: rightX, y: yRight + step * 3, w: size, h: size },
   }
 }
 
@@ -154,17 +157,24 @@ function bottomLayout(
 ): TouchLayout {
   const rowW = size * 3 + gap * 2
   const y = Math.max(
-    hudHeight + pad,
+    hudHeight + pad + size + gap,
     viewH - Math.max(safe.bottom, edge) - pad - size,
   )
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - rowW
-  const limit = y - pad
+  const pauseY = y - size - gap
+  const limit = pauseY - pad
   const natural = arenaBox(viewW, viewH, arena, zeroInsets)
   const insets = { ...zeroInsets }
   if (natural.y + natural.h > limit) insets.bottom = viewH - limit
   return {
     insets,
+    pause: {
+      x: rightX + (rowW - size) / 2,
+      y: pauseY,
+      w: size,
+      h: size,
+    },
     turnLeft: { x: leftX, y, w: size, h: size },
     forward: { x: leftX + size + gap, y, w: size, h: size },
     turnRight: { x: leftX + (size + gap) * 2, y, w: size, h: size },

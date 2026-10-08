@@ -11,9 +11,15 @@ import type { GameSession } from '../GameSession.ts'
 import type { HudStore } from '../hud/store.ts'
 import type { Box, TouchBinding, TouchLayout } from './touch.ts'
 
-const art = '/assets/png/retina/ui/controls'
-const normal = `${art}/button_round_normal.png`
-const pressed = `${art}/button_round_pressed.png`
+const art = '/assets/png/default/ui/controls'
+const faces = {
+  normal: `${art}/button_round_normal.png`,
+  hover: `${art}/button_round_hover.png`,
+  pressed: `${art}/button_round_pressed.png`,
+} as const
+
+const roundArt = 64
+const roundIcon = 32
 
 const pads: {
   binding: TouchBinding
@@ -89,6 +95,11 @@ export function TouchControls({
           sessionRef={sessionRef}
         />
       ))}
+      <PauseButton
+        box={layout.pause}
+        running={running}
+        sessionRef={sessionRef}
+      />
     </div>
   )
 }
@@ -110,11 +121,15 @@ function HoldButton({
 }) {
   const pointers = useRef(new Set<number>())
   const [held, setHeld] = useState(false)
+  const [over, setOver] = useState(false)
   const [keyed, setKeyed] = useState(false)
   const [play, setPlay] = useState(running)
   if (play !== running) {
     setPlay(running)
-    if (!running) setHeld(false)
+    if (!running) {
+      setHeld(false)
+      setOver(false)
+    }
   }
 
   useEffect(() => {
@@ -163,15 +178,80 @@ function HoldButton({
       onPointerUp={release}
       onPointerCancel={release}
       onLostPointerCapture={release}
-      onPointerLeave={leave}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') setOver(true)
+      }}
+      onPointerLeave={(event) => {
+        setOver(false)
+        leave(event)
+      }}
       onContextMenu={(event) => event.preventDefault()}
       onFocus={(event) => {
         if (event.currentTarget.matches(':focus-visible')) setKeyed(true)
       }}
       onBlur={() => setKeyed(false)}
-      style={buttonStyle(box, held, keyed)}
+      style={buttonStyle(box, buttonFace(held, over), keyed)}
     >
       <img src={icon} alt="" draggable={false} style={iconStyle} />
+    </button>
+  )
+}
+
+function PauseButton({
+  box,
+  running,
+  sessionRef,
+}: {
+  box: Box
+  running: boolean
+  sessionRef: RefObject<GameSession | null>
+}) {
+  const [down, setDown] = useState(false)
+  const [over, setOver] = useState(false)
+  const [keyed, setKeyed] = useState(false)
+  const [play, setPlay] = useState(running)
+  if (play !== running) {
+    setPlay(running)
+    if (!running) {
+      setDown(false)
+      setOver(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label="Pause"
+      onClick={() => {
+        if (!running) return
+        sessionRef.current?.pause()
+      }}
+      onPointerDown={() => {
+        if (!running) return
+        setDown(true)
+      }}
+      onPointerUp={() => setDown(false)}
+      onPointerCancel={() => setDown(false)}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') setOver(true)
+      }}
+      onPointerLeave={() => {
+        setOver(false)
+        setDown(false)
+      }}
+      onContextMenu={(event) => event.preventDefault()}
+      onFocus={(event) => {
+        if (event.currentTarget.matches(':focus-visible')) setKeyed(true)
+      }}
+      onBlur={() => setKeyed(false)}
+      style={buttonStyle(box, buttonFace(down, over), keyed)}
+    >
+      <img
+        src={`${art}/icon_pause.png`}
+        alt=""
+        draggable={false}
+        style={iconStyle}
+      />
     </button>
   )
 }
@@ -195,8 +275,8 @@ const iconStyle: CSSProperties = {
   position: 'absolute',
   left: '50%',
   top: '50%',
-  width: '50%',
-  height: '50%',
+  width: `${(roundIcon / roundArt) * 100}%`,
+  height: `${(roundIcon / roundArt) * 100}%`,
   transform: 'translate(-50%, -50%)',
   pointerEvents: 'none',
   userSelect: 'none',
@@ -210,7 +290,17 @@ function capturePointer(button: HTMLButtonElement, pointerId: number) {
   }
 }
 
-function buttonStyle(box: Box, down: boolean, keyed: boolean): CSSProperties {
+function buttonFace(down: boolean, over: boolean): keyof typeof faces {
+  if (down) return 'pressed'
+  if (over) return 'hover'
+  return 'normal'
+}
+
+function buttonStyle(
+  box: Box,
+  face: keyof typeof faces,
+  keyed: boolean,
+): CSSProperties {
   return {
     position: 'absolute',
     left: box.x,
@@ -221,7 +311,7 @@ function buttonStyle(box: Box, down: boolean, keyed: boolean): CSSProperties {
     padding: 0,
     border: 'none',
     backgroundColor: 'transparent',
-    backgroundImage: `url(${down ? pressed : normal})`,
+    backgroundImage: `url(${faces[face]})`,
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: '100% 100%',

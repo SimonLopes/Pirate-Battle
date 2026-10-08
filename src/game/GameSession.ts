@@ -34,6 +34,7 @@ export class GameSession {
   private ticking = false
   private destroyed = false
   private discard = false
+  private endAnnounced = false
 
   constructor(
     app: Application,
@@ -155,7 +156,11 @@ export class GameSession {
   }
 
   private readonly onTick = (): void => {
-    if (this.destroyed || !this.ticking) return
+    if (this.destroyed) return
+    if (!this.ticking) {
+      this.present()
+      return
+    }
     if (this.discard) {
       this.discard = false
       return
@@ -181,10 +186,16 @@ export class GameSession {
       }
     }
 
-    if (this.destroyed) return
-    this.renderer.draw(this.world)
+    this.present()
+  }
+
+  private present(): void {
+    if (!this.ticking && this.world.status !== 'ended') return
+    if (!this.destroyed) this.renderer.draw(this.world)
     this.publish()
-    if (this.world.status === 'ended') this.hud.announce('Match ended')
+    if (this.endAnnounced || this.world.status !== 'ended') return
+    this.endAnnounced = true
+    this.hud.announce('Match ended')
   }
 
   private publish(): void {

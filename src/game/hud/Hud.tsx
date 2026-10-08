@@ -3,9 +3,19 @@ import {
   useRef,
   useSyncExternalStore,
   type CSSProperties,
+  type ReactNode,
   type Ref,
 } from 'react'
 import type { HudStore } from './store.ts'
+
+const hudArt = '/assets/png/default/ui/hud'
+const panelArt = `${hudArt}/counter_panel.png`
+const scoreArt = `${hudArt}/icon_score.png`
+const timeArt = `${hudArt}/icon_time.png`
+
+const panelW = 160
+const panelH = 56
+const hudIconArt = 48
 
 const scoreboard: CSSProperties = {
   position: 'absolute',
@@ -22,16 +32,56 @@ const scoreboard: CSSProperties = {
   paddingRight: 'max(16px, env(safe-area-inset-right))',
   paddingBottom: 12,
   paddingLeft: 'max(16px, env(safe-area-inset-left))',
-  background: 'rgba(2, 16, 24, 0.82)',
+  background: 'transparent',
   color: '#fff6df',
-  font: '600 20px/1.2 system-ui, sans-serif',
-  fontVariantNumeric: 'tabular-nums',
   pointerEvents: 'none',
   userSelect: 'none',
 }
 
-const figure: CSSProperties = {
+const counter: CSSProperties = {
+  position: 'relative',
+  boxSizing: 'border-box',
+  width: `min(${panelW}px, calc(50% - 8px))`,
+  aspectRatio: `${panelW} / ${panelH}`,
   margin: 0,
+  backgroundColor: 'transparent',
+  backgroundImage: `url(${panelArt})`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'center',
+  backgroundSize: '100% 100%',
+  containerType: 'inline-size',
+}
+
+const counterRow: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  boxSizing: 'border-box',
+  width: '100%',
+  height: '100%',
+  padding: '2cqw 6cqw 2cqw 4cqw',
+  gap: '2cqw',
+}
+
+const counterIcon: CSSProperties = {
+  width: `${(hudIconArt / panelW) * 100}cqw`,
+  height: `${(hudIconArt / panelW) * 100}cqw`,
+  flexShrink: 0,
+  objectFit: 'contain',
+  pointerEvents: 'none',
+  userSelect: 'none',
+}
+
+const counterValue: CSSProperties = {
+  flex: '1 1 auto',
+  minWidth: 0,
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textAlign: 'center',
+  fontWeight: 700,
+  fontSize: '12.5cqw',
+  lineHeight: 1,
+  fontFamily: 'system-ui, sans-serif',
+  fontVariantNumeric: 'tabular-nums',
 }
 
 const hidden: CSSProperties = {
@@ -129,14 +179,35 @@ function HudScore({
 
   return (
     <div ref={barRef} style={scoreboard} inert={view.status === 'paused'}>
-      <p style={figure}>Score {view.score}</p>
-      <p style={figure}>
-        Time left{' '}
+      <Counter icon={scoreArt} label="Score ">
+        {view.score}
+      </Counter>
+      <Counter icon={timeArt} label="Time left ">
         <time dateTime={`PT${view.secondsLeft}S`}>
           {clock(view.secondsLeft)}
         </time>
-      </p>
+      </Counter>
     </div>
+  )
+}
+
+function Counter({
+  icon,
+  label,
+  children,
+}: {
+  icon: string
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <p style={counter}>
+      <span style={counterRow}>
+        <img src={icon} alt="" draggable={false} style={counterIcon} />
+        <span style={hidden}>{label}</span>
+        <span style={counterValue}>{children}</span>
+      </span>
+    </p>
   )
 }
 
