@@ -2,6 +2,7 @@ import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
 import { launch, launchSide, stepBalls, type Ball } from './ball.ts'
 import { keepInArena, pushOut, type Collider } from './collider.ts'
+import { strike } from './combat.ts'
 import {
   createChaser,
   createShooter,
@@ -13,6 +14,7 @@ import { headingUp, move, type Ship } from './ship.ts'
 export type World = {
   config: GameConfig
   time: number
+  score: number
   phase: 'play' | 'over'
   colliders: Collider[]
   player: Ship
@@ -34,6 +36,7 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
   return {
     config,
     time: 0,
+    score: 0,
     phase: 'play',
     colliders,
     player,
@@ -111,14 +114,17 @@ export function step(world: World, dt: number, actions: Actions): void {
       ),
   )
   stepBalls(world.balls, dt, ball, world.config.arena, world.colliders)
-  stepEnemies(
-    world.enemies,
-    world.player,
-    world.balls,
-    dt,
-    world.config,
-    world.colliders,
-  )
+  world.score += strike(world.balls, world.player, world.enemies)
+  if (world.player.hp > 0) {
+    stepEnemies(
+      world.enemies,
+      world.player,
+      world.balls,
+      dt,
+      world.config,
+      world.colliders,
+    )
+  }
   if (world.player.hp <= 0) {
     world.player.hp = 0
     world.phase = 'over'
