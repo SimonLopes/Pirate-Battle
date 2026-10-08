@@ -11,11 +11,16 @@ import {
 } from './enemy.ts'
 import { headingUp, move, type Ship } from './ship.ts'
 
+export type MatchStatus = 'running' | 'paused' | 'ended'
+
+export type EndReason = 'time' | 'death'
+
 export type World = {
   config: GameConfig
   time: number
   score: number
-  phase: 'play' | 'over'
+  status: MatchStatus
+  endReason: EndReason | null
   colliders: Collider[]
   player: Ship
   enemies: Enemy[]
@@ -37,7 +42,8 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
     config,
     time: 0,
     score: 0,
-    phase: 'play',
+    status: 'running',
+    endReason: null,
     colliders,
     player,
     enemies: [
@@ -61,12 +67,32 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
   }
 }
 
+export function pauseMatch(world: World): void {
+  if (world.status !== 'running') return
+  world.status = 'paused'
+}
+
+export function resumeMatch(world: World): void {
+  if (world.status !== 'paused') return
+  world.status = 'running'
+}
+
 export function step(world: World, dt: number, actions: Actions): void {
-  if (world.phase !== 'play') return
+  if (world.status !== 'running') return
+
+  const limit = world.config.sessionDuration
+  const remaining = limit - world.time
+  if (remaining <= 0) {
+    world.time = limit
+    endMatch(world, 'time')
+    return
+  }
+
+  const slice = Math.min(dt, remaining)
   const stats = world.config.ships.player
   move(
     world.player,
-    dt,
+    slice,
     stats.moveSpeed,
     stats.turnSpeed,
     actions.turn,
@@ -78,14 +104,14 @@ export function step(world: World, dt: number, actions: Actions): void {
   const cannon = world.config.cannon
   world.frontCooldown = tickCannon(
     world.frontCooldown,
-    dt,
+    slice,
     actions.fireFront,
     cannon.frontCooldown,
     () => launch(world.balls, world.player, ball, 'player'),
   )
   world.leftCooldown = tickCannon(
     world.leftCooldown,
-    dt,
+    slice,
     actions.fireLeft,
     cannon.sideCooldown,
     () =>
@@ -100,7 +126,7 @@ export function step(world: World, dt: number, actions: Actions): void {
   )
   world.rightCooldown = tickCannon(
     world.rightCooldown,
-    dt,
+    slice,
     actions.fireRight,
     cannon.sideCooldown,
     () =>
@@ -113,27 +139,31 @@ export function step(world: World, dt: number, actions: Actions): void {
         'player',
       ),
   )
-  stepBalls(world.balls, dt, ball, world.config.arena, world.colliders)
+  stepBalls(world.balls, slice, ball, world.config.arena, world.colliders)
   world.score += strike(world.balls, world.player, world.enemies)
   if (world.player.hp > 0) {
     stepEnemies(
       world.enemies,
       world.player,
       world.balls,
-      dt,
+      slice,
       world.config,
       world.colliders,
     )
   }
+  world.time += slice
+  if (slice < dt || world.time >= limit) world.time = limit
   if (world.player.hp <= 0) {
-    world.player.hp = 0
-    world.phase = 'over'
+    endMatch(world, 'death')
     return
   }
-  world.time += dt
-  if (world.time < world.config.sessionDuration) return
-  world.time = world.config.sessionDuration
-  world.phase = 'over'
+  if (world.time >= limit) endMatch(world, 'time')
+}
+
+function endMatch(world: World, reason: EndReason): void {
+  world.status = 'ended'
+  world.endReason = reason
+  if (reason === 'death') world.player.hp = 0
 }
 
 function tickCannon(

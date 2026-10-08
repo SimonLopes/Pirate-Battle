@@ -56,6 +56,11 @@ export function stepEnemies(
   for (let read = 0; read < enemies.length; read += 1) {
     const enemy = enemies[read]
     if (!enemy || enemy.hp <= 0) continue
+    if (player.hp <= 0) {
+      enemies[write] = enemy
+      write += 1
+      continue
+    }
     if (enemy.type === 'chaser') {
       const stats = config.ships.chaser
       steer(enemy, player, dt, stats.turnSpeed)

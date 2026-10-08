@@ -8,6 +8,11 @@ export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
   for (let read = 0; read < balls.length; read += 1) {
     const ball = balls[read]
     if (!ball) continue
+    if (player.hp <= 0) {
+      balls[write] = ball
+      write += 1
+      continue
+    }
     if (ball.owner === 'player') {
       const enemy = enemyAt(ball, enemies)
       if (!enemy) {
@@ -20,7 +25,7 @@ export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
       continue
     }
     if (overlaps(ball, player)) {
-      if (player.hp > 0) player.hp = Math.max(0, player.hp - ball.damage)
+      player.hp = Math.max(0, player.hp - ball.damage)
       continue
     }
     balls[write] = ball

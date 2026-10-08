@@ -29,6 +29,9 @@ export function GameCanvas() {
     let alive = true
     let session: GameSession | null = null
     let onResize: (() => void) | null = null
+    const adopt = (next: GameSession) => {
+      session = next
+    }
 
     const release = () => {
       session?.destroy()
@@ -56,8 +59,8 @@ export function GameCanvas() {
             return
           }
 
-          const match = new GameSession(app, defaultConfig)
-          session = match
+          const match = new GameSession(app, defaultConfig, adopt)
+          adopt(match)
           const { width, height } = match.config.arena
           onResize = () => fitStage(app, width, height)
           app.renderer.on('resize', onResize)
