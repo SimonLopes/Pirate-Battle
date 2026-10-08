@@ -65,7 +65,6 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
       {
         alias: 'tiles',
         src: `/assets/tilesheet/${tileSheet}`,
-        // retina cells are 128px for the same 64px grid
         data: { resolution: retina ? 2 : 1 },
       },
       ...effectNames.map((name) => ({

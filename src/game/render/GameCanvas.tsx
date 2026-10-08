@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Application } from 'pixi.js'
 import { defaultConfig } from '../config.ts'
+import { GameSession } from '../GameSession.ts'
 
 const background = '#06283d'
 
-function fitStage(app: Application) {
-  const { width, height } = defaultConfig.arena
+function fitStage(app: Application, width: number, height: number) {
   const viewWidth = app.screen.width
   const viewHeight = app.screen.height
   if (viewWidth === 0 || viewHeight === 0) return
@@ -26,11 +26,13 @@ export function GameCanvas() {
     if (!host) return
 
     const app = new Application()
-    // init resolves after strict mode has already run cleanup
     let alive = true
+    let session: GameSession | null = null
     let onResize: (() => void) | null = null
 
     const release = () => {
+      session?.destroy()
+      session = null
       if (!app.renderer) return
       if (onResize) {
         app.renderer.off('resize', onResize)
@@ -45,6 +47,7 @@ export function GameCanvas() {
         resolution: window.devicePixelRatio,
         autoDensity: true,
         background,
+        sharedTicker: false,
       })
       .then(
         () => {
@@ -53,11 +56,15 @@ export function GameCanvas() {
             return
           }
 
-          onResize = () => fitStage(app)
+          const match = new GameSession(app, defaultConfig)
+          session = match
+          const { width, height } = match.config.arena
+          onResize = () => fitStage(app, width, height)
           app.renderer.on('resize', onResize)
-          fitStage(app)
+          fitStage(app, width, height)
           app.canvas.style.display = 'block'
           host.appendChild(app.canvas)
+          match.start()
         },
         () => {
           release()

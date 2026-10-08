@@ -6,6 +6,8 @@ type ShipStats = {
 
 export type GameConfig = {
   sessionDuration: number
+  fixedDt: number
+  maxSteps: number
   spawnInterval: number
   spawnDistribution: {
     chaser: number
@@ -45,6 +47,8 @@ export const spawnIntervalLimits = { min: 1, max: 10 } as const
 
 export const defaultConfig: GameConfig = {
   sessionDuration: 120,
+  fixedDt: 1 / 60,
+  maxSteps: 5,
   spawnInterval: 3,
   spawnDistribution: {
     chaser: 0.5,
