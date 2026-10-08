@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Application } from 'pixi.js'
 import { defaultConfig } from '../config.ts'
 import { GameSession } from '../GameSession.ts'
+import { Hud } from '../hud/Hud.tsx'
+import { createHudStore } from '../hud/store.ts'
 
 const background = '#06283d'
 
@@ -20,6 +22,15 @@ function fitStage(app: Application, width: number, height: number) {
 
 export function GameCanvas() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const sessionRef = useRef<GameSession | null>(null)
+  const [store] = useState(() =>
+    createHudStore({
+      score: 0,
+      hp: defaultConfig.ships.player.hp,
+      secondsLeft: defaultConfig.sessionDuration,
+      status: 'running',
+    }),
+  )
 
   useEffect(() => {
     const host = hostRef.current
@@ -31,6 +42,7 @@ export function GameCanvas() {
     let onResize: (() => void) | null = null
     const adopt = (next: GameSession) => {
       session = next
+      sessionRef.current = next
     }
 
     const release = () => {
@@ -59,7 +71,7 @@ export function GameCanvas() {
             return
           }
 
-          const match = new GameSession(app, defaultConfig, adopt)
+          const match = new GameSession(app, defaultConfig, store, adopt)
           adopt(match)
           const { width, height } = match.config.arena
           onResize = () => fitStage(app, width, height)
@@ -76,9 +88,10 @@ export function GameCanvas() {
 
     return () => {
       alive = false
+      sessionRef.current = null
       release()
     }
-  }, [])
+  }, [store])
 
   return (
     <div
@@ -89,6 +102,13 @@ export function GameCanvas() {
         overflow: 'hidden',
         background,
       }}
-    />
+    >
+      <Hud
+        store={store}
+        onResume={() => {
+          sessionRef.current?.resume()
+        }}
+      />
+    </div>
   )
 }

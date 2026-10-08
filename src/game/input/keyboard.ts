@@ -44,7 +44,7 @@ export function createKeyboard(
     const binding = bindings[event.code]
     if (!binding) return
     event.preventDefault()
-    if (event.repeat && held.has(event.code)) return
+    if (event.repeat) return
     if (binding === 'pause') {
       onPause()
       return
