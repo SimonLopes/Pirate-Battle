@@ -1,4 +1,4 @@
-import { clamp, length, scale } from './math.ts'
+import { clamp, length, scale, type Vec2 } from './math.ts'
 
 export type Collider =
   | { shape: 'circle'; x: number; y: number; radius: number }
@@ -23,6 +23,26 @@ export function keepInArena(
 ): void {
   body.x = clamp(body.x, body.radius, arena.width - body.radius)
   body.y = clamp(body.y, body.radius, arena.height - body.radius)
+}
+
+export function hits(point: Vec2, colliders: readonly Collider[]): boolean {
+  for (const collider of colliders) {
+    if (collider.shape === 'circle') {
+      const dx = point.x - collider.x
+      const dy = point.y - collider.y
+      if (dx * dx + dy * dy <= collider.radius * collider.radius) return true
+      continue
+    }
+    if (
+      point.x >= collider.x &&
+      point.y >= collider.y &&
+      point.x <= collider.x + collider.width &&
+      point.y <= collider.y + collider.height
+    ) {
+      return true
+    }
+  }
+  return false
 }
 
 function pushCircle(

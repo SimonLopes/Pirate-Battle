@@ -1,4 +1,5 @@
 import { Container, Rectangle, Sprite, Texture, TilingSprite } from 'pixi.js'
+import type { Ball } from '../core/ball.ts'
 import type { Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
 import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
@@ -18,6 +19,8 @@ export function createRenderer(stage: Container): Renderer {
   let ready = false
   let assets: GameAssets | null = null
   let shipSprite: Sprite | null = null
+  let ballTexture: Texture | null = null
+  const ballSprites: Sprite[] = []
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -37,8 +40,10 @@ export function createRenderer(stage: Container): Renderer {
         ready = true
         paintArena(root, assets.tiles, frames, world.config.arena)
         shipSprite = paintShip(root, assets.ships)
+        ballTexture = cannonBallTexture(assets.ships)
       }
       if (shipSprite) placeShip(shipSprite, world.player)
+      if (ballTexture) placeBalls(root, ballTexture, ballSprites, world.balls)
     },
     destroy() {
       if (destroyed) return
@@ -88,6 +93,7 @@ function paintArena(
 }
 
 const playerShip = 'ship_1.png'
+const cannonBall = 'cannon_ball.png'
 const artBow = Math.PI / 2
 
 function paintShip(root: Container, sheet: GameAssets['ships']): Sprite {
@@ -102,6 +108,37 @@ function paintShip(root: Container, sheet: GameAssets['ships']): Sprite {
 function placeShip(sprite: Sprite, ship: Ship): void {
   sprite.position.set(ship.x, ship.y)
   sprite.rotation = ship.heading - artBow
+}
+
+function cannonBallTexture(sheet: GameAssets['ships']): Texture {
+  const texture = sheet.textures[cannonBall]
+  if (!texture) throw new Error('cannon ball sprite is missing')
+  return texture
+}
+
+function placeBalls(
+  root: Container,
+  texture: Texture,
+  sprites: Sprite[],
+  balls: readonly Ball[],
+): void {
+  while (sprites.length < balls.length) {
+    const sprite = new Sprite(texture)
+    sprite.anchor.set(0.5)
+    root.addChild(sprite)
+    sprites.push(sprite)
+  }
+  for (let i = 0; i < sprites.length; i += 1) {
+    const sprite = sprites[i]
+    if (!sprite) continue
+    const ball = balls[i]
+    if (!ball) {
+      sprite.visible = false
+      continue
+    }
+    sprite.visible = true
+    sprite.position.set(ball.x, ball.y)
+  }
 }
 
 function tileTexture(
