@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
-import { launch, stepBalls, type Ball } from './ball.ts'
+import { launch, launchSide, stepBalls, type Ball } from './ball.ts'
 import { keepInArena, pushOut, type Collider } from './collider.ts'
 import { headingUp, move, type Ship } from './ship.ts'
 
@@ -12,6 +12,8 @@ export type World = {
   player: Ship
   balls: Ball[]
   frontCooldown: number
+  leftCooldown: number
+  rightCooldown: number
 }
 
 export function createWorld(config: GameConfig, colliders: Collider[]): World {
@@ -28,6 +30,8 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
     },
     balls: [],
     frontCooldown: 0,
+    leftCooldown: 0,
+    rightCooldown: 0,
   }
 }
 
@@ -44,23 +48,62 @@ export function step(world: World, dt: number, actions: Actions): void {
   )
   pushOut(world.player, world.colliders)
   keepInArena(world.player, world.config.arena)
-  world.frontCooldown -= dt
-  if (world.frontCooldown <= 0) {
-    world.frontCooldown = 0
-    if (actions.fireFront) {
-      launch(world.balls, world.player, world.config.ball, 'player')
-      world.frontCooldown = world.config.cannon.frontCooldown
-    }
-  }
-  stepBalls(
-    world.balls,
+  const ball = world.config.ball
+  const cannon = world.config.cannon
+  world.frontCooldown = tickCannon(
+    world.frontCooldown,
     dt,
-    world.config.ball,
-    world.config.arena,
-    world.colliders,
+    actions.fireFront,
+    cannon.frontCooldown,
+    () => launch(world.balls, world.player, ball, 'player'),
   )
+  world.leftCooldown = tickCannon(
+    world.leftCooldown,
+    dt,
+    actions.fireLeft,
+    cannon.sideCooldown,
+    () =>
+      launchSide(
+        world.balls,
+        world.player,
+        ball,
+        cannon.sideSpacing,
+        -1,
+        'player',
+      ),
+  )
+  world.rightCooldown = tickCannon(
+    world.rightCooldown,
+    dt,
+    actions.fireRight,
+    cannon.sideCooldown,
+    () =>
+      launchSide(
+        world.balls,
+        world.player,
+        ball,
+        cannon.sideSpacing,
+        1,
+        'player',
+      ),
+  )
+  stepBalls(world.balls, dt, ball, world.config.arena, world.colliders)
   world.time += dt
   if (world.time < world.config.sessionDuration) return
   world.time = world.config.sessionDuration
   world.phase = 'over'
+}
+
+function tickCannon(
+  cooldown: number,
+  dt: number,
+  held: boolean,
+  reload: number,
+  shoot: () => void,
+): number {
+  const next = cooldown - dt
+  if (next > 0) return next
+  if (!held) return 0
+  shoot()
+  return reload
 }

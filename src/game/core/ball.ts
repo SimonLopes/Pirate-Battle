@@ -1,6 +1,6 @@
 import type { GameConfig } from '../config.ts'
 import { hits, type Collider } from './collider.ts'
-import { fromAngle } from './math.ts'
+import { fromAngle, type Vec2 } from './math.ts'
 import type { Ship } from './ship.ts'
 
 export type BallOwner = 'player' | 'enemy'
@@ -23,16 +23,58 @@ export function launch(
   owner: BallOwner,
 ): void {
   const dir = fromAngle(ship.heading)
-  balls.push({
-    x: ship.x + dir.x * ship.radius,
-    y: ship.y + dir.y * ship.radius,
+  balls.push(
+    makeBall(
+      ship.x + dir.x * ship.radius,
+      ship.y + dir.y * ship.radius,
+      dir,
+      stats,
+      owner,
+    ),
+  )
+}
+
+export function launchSide(
+  balls: Ball[],
+  ship: Ship,
+  stats: GameConfig['ball'],
+  spacing: number,
+  side: -1 | 1,
+  owner: BallOwner,
+): void {
+  const forward = fromAngle(ship.heading)
+  const dir = fromAngle(ship.heading + (side * Math.PI) / 2)
+  for (let slot = -1; slot <= 1; slot += 1) {
+    const along = slot * spacing
+    balls.push(
+      makeBall(
+        ship.x + forward.x * along + dir.x * ship.radius,
+        ship.y + forward.y * along + dir.y * ship.radius,
+        dir,
+        stats,
+        owner,
+      ),
+    )
+  }
+}
+
+function makeBall(
+  x: number,
+  y: number,
+  dir: Vec2,
+  stats: GameConfig['ball'],
+  owner: BallOwner,
+): Ball {
+  return {
+    x,
+    y,
     vx: dir.x * stats.speed,
     vy: dir.y * stats.speed,
     damage: stats.damage,
     owner,
     lifetime: stats.lifetime,
     traveled: 0,
-  })
+  }
 }
 
 export function stepBalls(
