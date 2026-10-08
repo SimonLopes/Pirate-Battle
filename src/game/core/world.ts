@@ -2,6 +2,7 @@ import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
 import { launch, launchSide, stepBalls, type Ball } from './ball.ts'
 import { keepInArena, pushOut, type Collider } from './collider.ts'
+import { createChaser, stepEnemies, type Enemy } from './enemy.ts'
 import { headingUp, move, type Ship } from './ship.ts'
 
 export type World = {
@@ -10,6 +11,7 @@ export type World = {
   phase: 'play' | 'over'
   colliders: Collider[]
   player: Ship
+  enemies: Enemy[]
   balls: Ball[]
   frontCooldown: number
   leftCooldown: number
@@ -17,17 +19,27 @@ export type World = {
 }
 
 export function createWorld(config: GameConfig, colliders: Collider[]): World {
+  const player: Ship = {
+    x: config.arena.width / 2,
+    y: config.arena.height / 2,
+    heading: headingUp,
+    radius: config.ships.player.radius,
+    hp: config.ships.player.hp,
+  }
   return {
     config,
     time: 0,
     phase: 'play',
     colliders,
-    player: {
-      x: config.arena.width / 2,
-      y: config.arena.height / 2,
-      heading: headingUp,
-      radius: config.ships.player.radius,
-    },
+    player,
+    enemies: [
+      createChaser(
+        config,
+        player.x + config.minSpawnDistance,
+        player.y,
+        player,
+      ),
+    ],
     balls: [],
     frontCooldown: 0,
     leftCooldown: 0,
@@ -88,6 +100,18 @@ export function step(world: World, dt: number, actions: Actions): void {
       ),
   )
   stepBalls(world.balls, dt, ball, world.config.arena, world.colliders)
+  stepEnemies(
+    world.enemies,
+    world.player,
+    dt,
+    world.config,
+    world.colliders,
+  )
+  if (world.player.hp <= 0) {
+    world.player.hp = 0
+    world.phase = 'over'
+    return
+  }
   world.time += dt
   if (world.time < world.config.sessionDuration) return
   world.time = world.config.sessionDuration

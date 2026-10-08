@@ -7,6 +7,7 @@ export type Ship = {
   y: number
   heading: number
   radius: number
+  hp: number
 }
 
 export function move(

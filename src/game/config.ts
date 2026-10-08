@@ -17,6 +17,7 @@ export type GameConfig = {
   ships: {
     player: ShipStats & { radius: number }
     chaser: ShipStats & {
+      radius: number
       collisionDamage: number
     }
     shooter: ShipStats & {
@@ -57,7 +58,13 @@ export const defaultConfig: GameConfig = {
   minSpawnDistance: 520,
   ships: {
     player: { hp: 100, moveSpeed: 180, turnSpeed: 2, radius: 57 },
-    chaser: { hp: 30, moveSpeed: 150, turnSpeed: 2.4, collisionDamage: 25 },
+    chaser: {
+      hp: 30,
+      moveSpeed: 150,
+      turnSpeed: 2.4,
+      radius: 57,
+      collisionDamage: 25,
+    },
     shooter: {
       hp: 40,
       moveSpeed: 110,
