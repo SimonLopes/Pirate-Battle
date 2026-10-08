@@ -7,6 +7,7 @@ export type Keyboard = {
 
 type Binding =
   | 'forward'
+  | 'reverse'
   | 'turnLeft'
   | 'turnRight'
   | 'fireFront'
@@ -17,6 +18,8 @@ type Binding =
 const bindings: Record<string, Binding> = {
   KeyW: 'forward',
   ArrowUp: 'forward',
+  KeyS: 'reverse',
+  ArrowDown: 'reverse',
   KeyA: 'turnLeft',
   ArrowLeft: 'turnLeft',
   KeyD: 'turnRight',
@@ -28,7 +31,11 @@ const bindings: Record<string, Binding> = {
   KeyP: 'pause',
 }
 
-export function createKeyboard(actions: Actions, onPause: () => void): Keyboard {
+export function createKeyboard(
+  actions: Actions,
+  onPause: () => void,
+  onPlay: () => void,
+): Keyboard {
   const held = new Set<string>()
   let destroyed = false
 
@@ -37,11 +44,12 @@ export function createKeyboard(actions: Actions, onPause: () => void): Keyboard 
     const binding = bindings[event.code]
     if (!binding) return
     event.preventDefault()
-    if (event.repeat) return
+    if (event.repeat && held.has(event.code)) return
     if (binding === 'pause') {
       onPause()
       return
     }
+    onPlay()
     held.add(event.code)
     apply(actions, held)
   }
@@ -75,7 +83,11 @@ export function createKeyboard(actions: Actions, onPause: () => void): Keyboard 
 }
 
 function apply(actions: Actions, held: ReadonlySet<string>): void {
-  actions.forward = held.has('KeyW') || held.has('ArrowUp')
+  const forward = held.has('KeyW') || held.has('ArrowUp')
+  const reverse = held.has('KeyS') || held.has('ArrowDown')
+  if (forward === reverse) actions.thrust = 0
+  else if (forward) actions.thrust = 1
+  else actions.thrust = -1
   actions.fireFront = held.has('Space')
   actions.fireLeft = held.has('KeyQ')
   actions.fireRight = held.has('KeyE')

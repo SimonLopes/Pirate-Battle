@@ -36,7 +36,11 @@ export class GameSession {
   start(): void {
     if (this.destroyed || this.started) return
     this.started = true
-    this.keyboard = createKeyboard(this.actions, () => this.pause())
+    this.keyboard = createKeyboard(
+      this.actions,
+      () => this.pause(),
+      () => this.resume(),
+    )
     this.running = true
     this.accumulator = 0
     this.discard = true

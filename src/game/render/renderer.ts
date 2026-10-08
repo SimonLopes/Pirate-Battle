@@ -1,4 +1,5 @@
 import { Container, Rectangle, Sprite, Texture, TilingSprite } from 'pixi.js'
+import type { Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
 import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
 import { loadAssets, type GameAssets } from './assets.ts'
@@ -16,6 +17,7 @@ export function createRenderer(stage: Container): Renderer {
   let destroyed = false
   let ready = false
   let assets: GameAssets | null = null
+  let shipSprite: Sprite | null = null
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -29,9 +31,14 @@ export function createRenderer(stage: Container): Renderer {
 
   return {
     draw(world) {
-      if (ready || destroyed || !assets) return
-      ready = true
-      paintArena(root, assets.tiles, frames, world.config.arena)
+      if (destroyed) return
+      if (!ready) {
+        if (!assets) return
+        ready = true
+        paintArena(root, assets.tiles, frames, world.config.arena)
+        shipSprite = paintShip(root, assets.ships)
+      }
+      if (shipSprite) placeShip(shipSprite, world.player)
     },
     destroy() {
       if (destroyed) return
@@ -78,6 +85,23 @@ function paintArena(
     }
     root.addChild(grid)
   }
+}
+
+const playerShip = 'ship_1.png'
+const artBow = Math.PI / 2
+
+function paintShip(root: Container, sheet: GameAssets['ships']): Sprite {
+  const texture = sheet.textures[playerShip]
+  if (!texture) throw new Error('player ship sprite is missing')
+  const sprite = new Sprite(texture)
+  sprite.anchor.set(0.5)
+  root.addChild(sprite)
+  return sprite
+}
+
+function placeShip(sprite: Sprite, ship: Ship): void {
+  sprite.position.set(ship.x, ship.y)
+  sprite.rotation = ship.heading - artBow
 }
 
 function tileTexture(
