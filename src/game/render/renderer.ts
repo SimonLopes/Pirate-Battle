@@ -1,5 +1,7 @@
-import { Container } from 'pixi.js'
+import { Container, Rectangle, Sprite, Texture, TilingSprite } from 'pixi.js'
 import type { World } from '../core/world.ts'
+import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
+import { loadAssets, type GameAssets } from './assets.ts'
 
 export type Renderer = {
   draw(world: World): void
@@ -10,12 +12,89 @@ export function createRenderer(stage: Container): Renderer {
   const root = new Container()
   stage.addChild(root)
 
+  const frames = new Map<number, Texture>()
+  let destroyed = false
+  let ready = false
+  let assets: GameAssets | null = null
+
+  void loadAssets(() => undefined).then(
+    (loaded) => {
+      if (destroyed) return
+      assets = loaded
+    },
+    () => {
+      ready = true
+    },
+  )
+
   return {
     draw(world) {
-      void world
+      if (ready || destroyed || !assets) return
+      ready = true
+      paintArena(root, assets.tiles, frames, world.config.arena)
     },
     destroy() {
+      if (destroyed) return
+      destroyed = true
       root.destroy({ children: true })
+      for (const texture of frames.values()) texture.destroy(false)
+      frames.clear()
     },
   }
+}
+
+function paintArena(
+  root: Container,
+  sheet: Texture,
+  frames: Map<number, Texture>,
+  arena: { width: number; height: number },
+): void {
+  const water = tileTexture(sheet, frames, waterTile)
+  const scale = tileSize / water.frame.width
+  root.addChild(
+    new TilingSprite({
+      texture: water,
+      width: arena.width,
+      height: arena.height,
+      tileScale: { x: scale, y: scale },
+    }),
+  )
+
+  for (const island of islands) {
+    const grid = new Container()
+    grid.position.set(island.x, island.y)
+    let y = 0
+    for (const row of island.tiles) {
+      let x = 0
+      for (const id of row) {
+        const sprite = new Sprite(tileTexture(sheet, frames, id))
+        sprite.position.set(x * tileSize, y * tileSize)
+        sprite.width = tileSize
+        sprite.height = tileSize
+        grid.addChild(sprite)
+        x += 1
+      }
+      y += 1
+    }
+    root.addChild(grid)
+  }
+}
+
+function tileTexture(
+  sheet: Texture,
+  frames: Map<number, Texture>,
+  index: number,
+): Texture {
+  const found = frames.get(index)
+  if (found) return found
+
+  const size = sheet.source.width / sheetColumns
+  const col = (index - 1) % sheetColumns
+  const row = Math.floor((index - 1) / sheetColumns)
+  const texture = new Texture({
+    source: sheet.source,
+    frame: new Rectangle(col * size, row * size, size, size),
+  })
+  frames.set(index, texture)
+  return texture
 }

@@ -2,6 +2,7 @@ import { UPDATE_PRIORITY, type Application } from 'pixi.js'
 import type { GameConfig } from './config.ts'
 import { clearActions, idleActions, type Actions } from './core/actions.ts'
 import { createWorld, step, type World } from './core/world.ts'
+import { islands } from './map.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 
 export class GameSession {
@@ -20,7 +21,10 @@ export class GameSession {
   constructor(app: Application, config: GameConfig) {
     this.app = app
     this.config = structuredClone(config)
-    this.world = createWorld(this.config)
+    this.world = createWorld(
+      this.config,
+      islands.map((island) => island.collider),
+    )
     this.actions = idleActions()
     this.renderer = createRenderer(app.stage)
     document.addEventListener('visibilitychange', this.onHide)

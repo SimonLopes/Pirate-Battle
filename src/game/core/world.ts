@@ -1,17 +1,20 @@
 import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
+import type { Collider } from './collider.ts'
 
 export type World = {
   config: GameConfig
   time: number
   phase: 'play' | 'over'
+  colliders: Collider[]
 }
 
-export function createWorld(config: GameConfig): World {
+export function createWorld(config: GameConfig, colliders: Collider[]): World {
   return {
     config,
     time: 0,
     phase: 'play',
+    colliders,
   }
 }
 
