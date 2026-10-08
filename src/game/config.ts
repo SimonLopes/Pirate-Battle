@@ -21,6 +21,7 @@ export type GameConfig = {
       collisionDamage: number
     }
     shooter: ShipStats & {
+      radius: number
       attackRange: number
       attackCooldown: number
     }
@@ -69,6 +70,7 @@ export const defaultConfig: GameConfig = {
       hp: 40,
       moveSpeed: 110,
       turnSpeed: 1.6,
+      radius: 57,
       attackRange: 360,
       attackCooldown: 1.5,
     },

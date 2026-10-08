@@ -2,7 +2,12 @@ import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
 import { launch, launchSide, stepBalls, type Ball } from './ball.ts'
 import { keepInArena, pushOut, type Collider } from './collider.ts'
-import { createChaser, stepEnemies, type Enemy } from './enemy.ts'
+import {
+  createChaser,
+  createShooter,
+  stepEnemies,
+  type Enemy,
+} from './enemy.ts'
 import { headingUp, move, type Ship } from './ship.ts'
 
 export type World = {
@@ -36,6 +41,12 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
       createChaser(
         config,
         player.x + config.minSpawnDistance,
+        player.y,
+        player,
+      ),
+      createShooter(
+        config,
+        player.x - config.minSpawnDistance,
         player.y,
         player,
       ),
@@ -103,6 +114,7 @@ export function step(world: World, dt: number, actions: Actions): void {
   stepEnemies(
     world.enemies,
     world.player,
+    world.balls,
     dt,
     world.config,
     world.colliders,

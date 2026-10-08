@@ -22,6 +22,7 @@ export function createRenderer(stage: Container): Renderer {
   let shipSprite: Sprite | null = null
   let ballTexture: Texture | null = null
   let chaserTexture: Texture | null = null
+  let shooterTexture: Texture | null = null
   const ballSprites: Sprite[] = []
   const enemySprites: Sprite[] = []
 
@@ -45,11 +46,18 @@ export function createRenderer(stage: Container): Renderer {
         shipSprite = paintShip(root, assets.ships)
         ballTexture = cannonBallTexture(assets.ships)
         chaserTexture = shipTexture(assets.ships, chaserShip)
+        shooterTexture = shipTexture(assets.ships, shooterShip)
       }
       if (shipSprite) placeShip(shipSprite, world.player)
       if (ballTexture) placeBalls(root, ballTexture, ballSprites, world.balls)
-      if (chaserTexture) {
-        placeEnemies(root, chaserTexture, enemySprites, world.enemies)
+      if (chaserTexture && shooterTexture) {
+        placeEnemies(
+          root,
+          chaserTexture,
+          shooterTexture,
+          enemySprites,
+          world.enemies,
+        )
       }
     },
     destroy() {
@@ -101,6 +109,7 @@ function paintArena(
 
 const playerShip = 'ship_1.png'
 const chaserShip = 'ship_2.png'
+const shooterShip = 'ship_3.png'
 const cannonBall = 'cannon_ball.png'
 const artBow = Math.PI / 2
 
@@ -128,12 +137,13 @@ function cannonBallTexture(sheet: GameAssets['ships']): Texture {
 
 function placeEnemies(
   root: Container,
-  texture: Texture,
+  chaserTexture: Texture,
+  shooterTexture: Texture,
   sprites: Sprite[],
   enemies: readonly Enemy[],
 ): void {
   while (sprites.length < enemies.length) {
-    const sprite = new Sprite(texture)
+    const sprite = new Sprite(chaserTexture)
     sprite.anchor.set(0.5)
     root.addChild(sprite)
     sprites.push(sprite)
@@ -147,6 +157,7 @@ function placeEnemies(
       continue
     }
     sprite.visible = true
+    sprite.texture = enemy.type === 'chaser' ? chaserTexture : shooterTexture
     sprite.position.set(enemy.x, enemy.y)
     sprite.rotation = enemy.heading - artBow
   }
