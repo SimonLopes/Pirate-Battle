@@ -166,7 +166,7 @@ function TimeField({
         />
       </div>
       {error && (
-        <p id={errorId} className="option-error">
+        <p id={errorId} className="option-error" role="alert">
           {error}
         </p>
       )}

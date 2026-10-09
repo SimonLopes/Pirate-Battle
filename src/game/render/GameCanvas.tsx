@@ -1,14 +1,22 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Application } from 'pixi.js'
 import type { GameConfig } from '../config.ts'
 import { GameSession } from '../GameSession.ts'
-import { loadAssets } from './assets.ts'
+import { loadAssets, type GameAssets } from './assets.ts'
 import { Hud } from '../hud/Hud.tsx'
 import { createHudStore } from '../hud/store.ts'
 import type { MatchResult } from '../result.ts'
 import { TouchControls } from '../input/TouchControls.tsx'
 import { useTouchLayout } from '../input/useTouchLayout.ts'
 import { stageFit, zeroInsets, type Insets } from '../input/touch.ts'
+import { Button } from '../../ui/Button.tsx'
+import { Panel } from '../../ui/Panel.tsx'
 
 const background = '#06283d'
 
@@ -34,6 +42,83 @@ export function GameCanvas({
   config: GameConfig
   onMenu: () => void
   onEnd: (result: MatchResult) => void
+}) {
+  const [attempt, setAttempt] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [assets, setAssets] = useState<GameAssets | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const begin = useCallback(() => {
+    setPlaying(true)
+  }, [])
+  const failStart = useCallback(() => {
+    setError('Could not start the match.')
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    void loadAssets((value) => {
+      if (alive) setProgress(value)
+    }).then(
+      (loaded) => {
+        if (!alive) return
+        setProgress(1)
+        setAssets(loaded)
+      },
+      (reason: unknown) => {
+        if (!alive) return
+        setError(loadMessage(reason))
+      },
+    )
+    return () => {
+      alive = false
+    }
+  }, [attempt])
+
+  const retry = () => {
+    setError(null)
+    setProgress(0)
+    setAssets(null)
+    setPlaying(false)
+    setAttempt((value) => value + 1)
+  }
+
+  return (
+    <>
+      {assets && !error && (
+        <Match
+          config={config}
+          arena={assets.arena}
+          covered={!playing}
+          onMenu={onMenu}
+          onEnd={onEnd}
+          onReady={begin}
+          onFail={failStart}
+        />
+      )}
+      {!playing && (
+        <LoadScreen progress={progress} error={error} onRetry={retry} />
+      )}
+    </>
+  )
+}
+
+function Match({
+  config,
+  arena,
+  covered,
+  onMenu,
+  onEnd,
+  onReady,
+  onFail,
+}: {
+  config: GameConfig
+  arena: GameAssets['arena']
+  covered: boolean
+  onMenu: () => void
+  onEnd: (result: MatchResult) => void
+  onReady: () => void
+  onFail: () => void
 }) {
   const [snapshot] = useState(config)
   const hostRef = useRef<HTMLDivElement>(null)
@@ -88,36 +173,35 @@ export function GameCanvas({
       app.destroy({ removeView: true }, { children: true })
     }
 
-    void Promise.all([
-      app.init({
+    void app
+      .init({
         resizeTo: host,
         resolution: window.devicePixelRatio,
         autoDensity: true,
         background,
         sharedTicker: false,
-      }),
-      loadAssets(() => undefined),
-    ]).then(
-      ([, assets]) => {
-        if (!alive) {
-          release()
-          return
-        }
+      })
+      .then(
+        () => {
+          if (!alive) {
+            release()
+            return
+          }
 
-        appRef.current = app
-        const match = new GameSession(app, snapshot, store, adopt, assets.arena)
-        adopt(match)
-        onResize = fit
-        app.renderer.on('resize', onResize)
-        fit()
-        app.canvas.style.display = 'block'
-        host.appendChild(app.canvas)
-        match.start()
-      },
-      () => {
-        release()
-      },
-    )
+          appRef.current = app
+          const match = new GameSession(app, snapshot, store, adopt, arena)
+          adopt(match)
+          onResize = fit
+          app.renderer.on('resize', onResize)
+          fit()
+          app.canvas.style.display = 'block'
+          host.appendChild(app.canvas)
+          onReady()
+        },
+        () => {
+          if (alive) onFail()
+        },
+      )
 
     return () => {
       alive = false
@@ -125,7 +209,12 @@ export function GameCanvas({
       sessionRef.current = null
       release()
     }
-  }, [snapshot, store])
+  }, [arena, onFail, onReady, snapshot, store])
+
+  useEffect(() => {
+    if (covered) return
+    sessionRef.current?.start()
+  }, [covered])
 
   useEffect(() => {
     let reported = false
@@ -157,6 +246,7 @@ export function GameCanvas({
   return (
     <div
       ref={hostRef}
+      inert={covered}
       style={{
         position: 'fixed',
         inset: 0,
@@ -177,4 +267,76 @@ export function GameCanvas({
       />
     </div>
   )
+}
+
+function LoadScreen({
+  progress,
+  error,
+  onRetry,
+}: {
+  progress: number
+  error: string | null
+  onRetry: () => void
+}) {
+  const percent = loadPercent(progress)
+
+  useEffect(() => {
+    if (!error) return
+    document.getElementById('asset-retry')?.focus()
+  }, [error])
+
+  return (
+    <main
+      className="menu-scene load-screen"
+      aria-busy={error ? undefined : true}
+    >
+      <Panel>
+        <h1 id="load-title" className="menu-heading">
+          {error ? 'Loading failed' : 'Loading'}
+        </h1>
+        {error ? (
+          <div className="menu-stack">
+            <p id="asset-error" className="option-error" role="alert">
+              {error}
+            </p>
+            <Button
+              id="asset-retry"
+              aria-describedby="asset-error"
+              onClick={onRetry}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div
+              className="load-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent}
+              aria-valuetext={`${percent}%`}
+              aria-labelledby="load-title"
+            >
+              <div className="load-fill" style={{ width: `${percent}%` }} />
+            </div>
+            <p className="menu-copy" aria-hidden="true">
+              {percent}%
+            </p>
+          </>
+        )}
+      </Panel>
+    </main>
+  )
+}
+
+function loadPercent(progress: number): number {
+  if (!Number.isFinite(progress)) return 0
+  const unit = Math.min(1, Math.max(0, progress))
+  return Math.round(unit * 100)
+}
+
+function loadMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message
+  return 'Could not load the match assets.'
 }

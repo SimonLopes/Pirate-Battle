@@ -38,6 +38,7 @@ export function createKeyboard(
   touch: TouchBindings,
   onPause: () => void,
   onPlay: () => void,
+  isActive: () => boolean,
 ): Keyboard {
   const held = new Set<string>()
   let destroyed = false
@@ -47,7 +48,7 @@ export function createKeyboard(
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
-    if (destroyed) return
+    if (destroyed || !isActive()) return
     const binding = bindings[event.code]
     if (!binding) return
     event.preventDefault()
@@ -62,7 +63,7 @@ export function createKeyboard(
   }
 
   const onKeyUp = (event: KeyboardEvent) => {
-    if (destroyed) return
+    if (destroyed || !isActive()) return
     const binding = bindings[event.code]
     if (!binding) return
     event.preventDefault()

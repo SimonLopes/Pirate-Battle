@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   configFromOptions,
   loadOptions,
@@ -9,6 +9,8 @@ import { loadResult, saveResult, type MatchResult } from './game/result.ts'
 import { GameCanvas } from './game/render/GameCanvas.tsx'
 import { Menu } from './menu/Menu.tsx'
 import { Result } from './menu/Result.tsx'
+import { RotateNotice } from './ui/RotateNotice.tsx'
+import { useCoarsePortrait } from './ui/useCoarsePortrait.ts'
 import './ui/ui.css'
 
 type Screen = 'menu' | 'game' | 'result'
@@ -20,6 +22,15 @@ function App() {
   const [matchConfig, setMatchConfig] = useState(() =>
     configFromOptions(options),
   )
+  const locked = useCoarsePortrait()
+  const screenRef = useRef(screen)
+
+  useLayoutEffect(() => {
+    if (screenRef.current === screen) return
+    screenRef.current = screen
+    if (screen !== 'menu') return
+    document.getElementById('menu-play')?.focus()
+  }, [screen])
 
   const play = () => {
     setMatchConfig(configFromOptions(options))
@@ -38,23 +49,29 @@ function App() {
     return true
   }
 
+  let view: ReactNode
   if (screen === 'game') {
-    return (
+    view = (
       <GameCanvas
         config={matchConfig}
         onMenu={() => setScreen('menu')}
         onEnd={finish}
       />
     )
-  }
-
-  if (screen === 'result' && result) {
-    return (
+  } else if (screen === 'result' && result) {
+    view = (
       <Result result={result} onPlay={play} onMenu={() => setScreen('menu')} />
     )
+  } else {
+    view = <Menu options={options} onPlay={play} onSave={save} />
   }
 
-  return <Menu options={options} onPlay={play} onSave={save} />
+  return (
+    <>
+      <div inert={locked ? true : undefined}>{view}</div>
+      {locked && <RotateNotice />}
+    </>
+  )
 }
 
 export default App

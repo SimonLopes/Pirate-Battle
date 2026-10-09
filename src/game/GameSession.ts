@@ -79,6 +79,7 @@ export class GameSession {
         else this.pause()
       },
       () => this.resume(),
+      () => this.world.status === 'running',
     )
     this.keyboard.sync()
     this.ticking = true

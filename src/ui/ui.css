@@ -194,6 +194,7 @@ body {
 .menu-button:focus {
   outline: 3px solid #ffe7a3;
   outline-offset: 4px;
+  box-shadow: 0 0 0 2px #06283d;
 }
 
 .menu-button:disabled {
@@ -222,7 +223,7 @@ body {
 
 .menu-button-primary:disabled {
   background-image: url('/assets/png/default/ui/menu/button_primary_disabled.png');
-  color: #5c564c;
+  color: #140e08;
 }
 
 .menu-button-secondary {
@@ -327,8 +328,9 @@ body {
 }
 
 .option-value input:focus {
-  outline: 2px solid #ffe7a3;
+  outline: 3px solid #ffe7a3;
   outline-offset: 3px;
+  box-shadow: 0 0 0 2px #06283d;
 }
 
 .option-unit {
@@ -354,6 +356,27 @@ body {
   font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.load-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+}
+
+.load-track {
+  width: min(280px, 100%);
+  height: 16px;
+  margin: 8px auto 12px;
+  border: 2px solid rgba(244, 231, 200, 0.55);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(2, 16, 24, 0.55);
+}
+
+.load-fill {
+  height: 100%;
+  background: #f0d48a;
 }
 
 .option-form .menu-button {
@@ -396,9 +419,46 @@ body {
   cursor: not-allowed;
 }
 
+.step-button:focus-visible,
 .step-button:focus {
   outline: 3px solid #ffe7a3;
   outline-offset: 3px;
+  box-shadow: 0 0 0 2px #06283d;
+}
+
+.dialog-host {
+  width: min(440px, 100%);
+  margin: auto;
+}
+
+.dialog-host > .menu-panel {
+  width: 100%;
+  margin: 0;
+}
+
+.rotate-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  background: #06283d;
+  text-align: center;
+}
+
+.rotate-gate:focus {
+  outline: 3px solid #ffe7a3;
+  outline-offset: -8px;
+}
+
+.rotate-gate .menu-copy {
+  max-width: 22rem;
 }
 
 @media (max-width: 560px) {

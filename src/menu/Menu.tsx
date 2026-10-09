@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { PlayerOptions } from '../game/options.ts'
 import { Button } from '../ui/Button.tsx'
 import { Panel } from '../ui/Panel.tsx'
@@ -18,25 +18,42 @@ export function Menu({
   onSave: (options: PlayerOptions) => boolean
 }) {
   const [view, setView] = useState<'home' | 'options' | LogTab>('home')
+  const pendingFocus = useRef<string | null>(null)
+
+  useLayoutEffect(() => {
+    const id = pendingFocus.current
+    if (!id) return
+    pendingFocus.current = null
+    document.getElementById(id)?.focus()
+  }, [view])
+
+  const show = (next: 'home' | 'options' | LogTab, focus: string) => {
+    pendingFocus.current = focus
+    setView(next)
+  }
 
   return (
     <main className="menu-scene">
       {view === 'home' && (
         <Home
           onPlay={onPlay}
-          onOptions={() => setView('options')}
-          onTab={setView}
+          onOptions={() => show('options', 'session-time')}
+          onTab={(tab) => show(tab, tabId(tab))}
         />
       )}
       {view === 'options' && (
         <Options
           saved={options}
           onSave={onSave}
-          onBack={() => setView('home')}
+          onBack={() => show('home', 'menu-options')}
         />
       )}
       {view !== 'home' && view !== 'options' && (
-        <Log tab={view} onTab={setView} onMenu={() => setView('home')} />
+        <Log
+          tab={view}
+          onTab={(tab) => show(tab, tabId(tab))}
+          onMenu={() => show('home', 'menu-play')}
+        />
       )}
     </main>
   )
@@ -58,8 +75,10 @@ function Home({
       </h1>
       <p className="menu-tagline">Zarpe. Assuma o comando.</p>
       <div className="menu-stack">
-        <Button onClick={onPlay}>Jogar</Button>
-        <Button variant="secondary" onClick={onOptions}>
+        <Button id="menu-play" onClick={onPlay}>
+          Jogar
+        </Button>
+        <Button id="menu-options" variant="secondary" onClick={onOptions}>
           Opções
         </Button>
       </div>
@@ -115,10 +134,6 @@ function Tabs({
     event.preventDefault()
     const next = siblingTab(tab, event.key)
     onTab(next)
-    const id = next === 'ranking' ? 'tab-ranking' : 'tab-history'
-    requestAnimationFrame(() => {
-      document.getElementById(id)?.focus()
-    })
   }
 
   return (
@@ -132,6 +147,7 @@ function Tabs({
         id="tab-ranking"
         compact
         role="tab"
+        tabIndex={tabStop(tab, 'ranking')}
         variant={tab === 'ranking' ? 'primary' : 'secondary'}
         aria-selected={tab === 'ranking'}
         aria-controls="panel-ranking"
@@ -143,6 +159,7 @@ function Tabs({
         id="tab-history"
         compact
         role="tab"
+        tabIndex={tabStop(tab, 'history')}
         variant={tab === 'history' ? 'primary' : 'secondary'}
         aria-selected={tab === 'history'}
         aria-controls="panel-history"
@@ -152,6 +169,15 @@ function Tabs({
       </Button>
     </div>
   )
+}
+
+function tabId(tab: LogTab): string {
+  return tab === 'ranking' ? 'tab-ranking' : 'tab-history'
+}
+
+function tabStop(tab: LogTab | null, name: LogTab): 0 | -1 {
+  if (tab === null) return name === 'ranking' ? 0 : -1
+  return tab === name ? 0 : -1
 }
 
 function siblingTab(tab: LogTab | null, key: string): LogTab {

@@ -1,6 +1,4 @@
 import {
-  useEffect,
-  useRef,
   useSyncExternalStore,
   type CSSProperties,
   type ReactNode,
@@ -8,6 +6,7 @@ import {
 } from 'react'
 import { Button } from '../../ui/Button.tsx'
 import { Panel } from '../../ui/Panel.tsx'
+import { useDialog } from '../../ui/useDialog.ts'
 import type { HudStore } from './store.ts'
 
 const hudArt = '/assets/png/default/ui/hud'
@@ -194,33 +193,7 @@ function PauseDialog({
     store.getView,
   )
   const open = view.status === 'paused'
-  const dialogRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const root = dialogRef.current
-    if (!root) return
-    const buttons = () => [
-      ...root.querySelectorAll<HTMLButtonElement>('button'),
-    ]
-    buttons()[0]?.focus()
-    const trap = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return
-      const list = buttons()
-      const first = list[0]
-      const last = list[list.length - 1]
-      if (!first || !last) return
-      event.preventDefault()
-      const current = document.activeElement
-      if (event.shiftKey) {
-        if (current === first) last.focus()
-        else first.focus()
-      } else if (current === last) first.focus()
-      else last.focus()
-    }
-    document.addEventListener('keydown', trap)
-    return () => document.removeEventListener('keydown', trap)
-  }, [open])
+  const dialogRef = useDialog(open, onResume)
 
   if (!open) return null
 
