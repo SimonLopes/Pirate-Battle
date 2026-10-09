@@ -60,6 +60,14 @@ export type GameConfig = {
     width: number
     height: number
   }
+  islands: {
+    margin: number
+    gap: number
+    plantDensity: number
+    beachMax: number
+    rockMin: number
+    rockMax: number
+  }
 }
 
 export const sessionDurationLimits = { min: 60, max: 180 } as const
@@ -135,5 +143,13 @@ export const defaultConfig: GameConfig = {
   arena: {
     width: 2048,
     height: 1152,
+  },
+  islands: {
+    margin: 2,
+    gap: 3,
+    plantDensity: 0.28,
+    beachMax: 2,
+    rockMin: 1,
+    rockMax: 3,
   },
 }
