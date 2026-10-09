@@ -19,6 +19,7 @@ import {
   type TouchBindings,
 } from './input/touch.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
+import { isTestMode, matchSeed, track, untrack } from './testing.ts'
 
 export class GameSession {
   readonly config: GameConfig
@@ -31,6 +32,7 @@ export class GameSession {
   private readonly renderer: Renderer
   private readonly adopt: (session: GameSession) => void
   private readonly arena: ArenaMap
+  private readonly isManual = isTestMode
   private keyboard: Keyboard | null = null
   private accumulator = 0
   private started = false
@@ -46,7 +48,7 @@ export class GameSession {
     hud: HudStore,
     adopt: (session: GameSession) => void,
     arena: ArenaMap,
-    seed = Date.now(),
+    seed = matchSeed(),
   ) {
     const rng = createRng(seed)
     this.app = app
@@ -67,6 +69,7 @@ export class GameSession {
     this.renderer = createRenderer(app.stage, debug)
     document.addEventListener('visibilitychange', this.onHide)
     window.addEventListener('blur', this.onBlur)
+    track(this)
   }
 
   start(): void {
@@ -174,9 +177,27 @@ export class GameSession {
     next.start()
   }
 
+  advance(ms: number): void {
+    if (this.destroyed || !this.isManual || !this.ticking) return
+    const { fixedDt } = this.config
+    const total = this.accumulator + ms / 1000
+    const count = Math.floor(total / fixedDt + 1e-6)
+    this.accumulator = Math.max(0, total - count * fixedDt)
+    for (
+      let done = 0;
+      done < count && this.world.status === 'running';
+      done += 1
+    ) {
+      step(this.world, fixedDt, this.actions)
+    }
+    if (this.world.status !== 'running') this.accumulator = 0
+    this.present(ms / 1000)
+  }
+
   destroy(): void {
     if (this.destroyed) return
     this.destroyed = true
+    untrack(this)
     this.ticking = false
     this.app.ticker.remove(this.onTick)
     this.keyboard?.destroy()
@@ -187,9 +208,10 @@ export class GameSession {
   }
 
   private readonly onTick = (): void => {
-    if (this.destroyed) return
+    if (this.destroyed || this.isManual) return
+    const dt = this.app.ticker.elapsedMS / 1000
     if (!this.ticking) {
-      this.present()
+      this.present(dt)
       return
     }
     if (this.discard) {
@@ -199,7 +221,7 @@ export class GameSession {
 
     if (this.world.status === 'running') {
       const { fixedDt, maxSteps } = this.config
-      this.accumulator += this.app.ticker.elapsedMS / 1000
+      this.accumulator += dt
 
       let steps = 0
       while (
@@ -217,13 +239,13 @@ export class GameSession {
       }
     }
 
-    this.present()
+    this.present(dt)
   }
 
-  private present(): void {
+  private present(dt: number): void {
     if (!this.ticking && this.world.status !== 'ended') return
     if (!this.destroyed) {
-      this.renderer.draw(this.world, this.app.ticker.elapsedMS / 1000)
+      this.renderer.draw(this.world, dt)
     }
     this.publish()
     this.publishStick()
