@@ -7,8 +7,9 @@ import {
   TilingSprite,
 } from 'pixi.js'
 import type { Ball } from '../core/ball.ts'
+import type { Collider } from '../core/collider.ts'
 import type { Enemy } from '../core/enemy.ts'
-import type { Ship } from '../core/ship.ts'
+import { hullBody, type Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
 import { sheetColumns, tileSize, waterTile, type Island } from '../map.ts'
 import { loadAssets, type BarName, type GameAssets } from './assets.ts'
@@ -103,10 +104,12 @@ const wakeStern = 46
 const wakeLife = 0.55
 const frameCap = 0.05
 const phaseStep = 2.4
+const debugStroke = { width: 1, color: 0x7dff6a, pixelLine: true }
 
 export function createRenderer(
   stage: Container,
   islands: readonly Island[],
+  debug: boolean,
 ): Renderer {
   const root = new Container()
   const arenaLayer = new Container()
@@ -115,6 +118,7 @@ export function createRenderer(
   const ballLayer = new Container()
   const effectLayer = new Container()
   const barLayer = new Container()
+  const debugView = debug ? new Graphics() : null
   root.addChild(
     arenaLayer,
     wakeLayer,
@@ -123,6 +127,7 @@ export function createRenderer(
     effectLayer,
     barLayer,
   )
+  if (debugView) root.addChild(debugView)
   stage.addChild(root)
 
   const frames = new Map<number, Texture>()
@@ -159,6 +164,7 @@ export function createRenderer(
   return {
     draw(world, dt) {
       if (destroyed) return
+      if (debugView) paintColliders(debugView, world)
       if (!ready) {
         if (!assets) return
         ready = true
@@ -638,6 +644,32 @@ function dropTrails(sea: Sea): void {
   for (const ship of sea.trails.keys()) {
     if (!sea.live.has(ship)) sea.trails.delete(ship)
   }
+}
+
+function paintColliders(view: Graphics, world: World): void {
+  view.clear()
+  for (const collider of world.colliders) traceCollider(view, collider)
+  traceShip(view, world.player)
+  for (const enemy of world.enemies) traceShip(view, enemy)
+  const radius = world.config.ball.radius
+  for (const ball of world.balls) {
+    view.circle(ball.x, ball.y, radius).stroke(debugStroke)
+  }
+}
+
+function traceCollider(view: Graphics, collider: Collider): void {
+  if (collider.shape === 'circle') {
+    view.circle(collider.x, collider.y, collider.radius).stroke(debugStroke)
+    return
+  }
+  view
+    .rect(collider.x, collider.y, collider.width, collider.height)
+    .stroke(debugStroke)
+}
+
+function traceShip(view: Graphics, ship: Ship): void {
+  const hull = hullBody(ship)
+  view.circle(hull.x, hull.y, hull.radius).stroke(debugStroke)
 }
 
 function wrap(value: number, span: number): number {

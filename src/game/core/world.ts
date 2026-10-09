@@ -1,7 +1,7 @@
 import type { GameConfig } from '../config.ts'
 import type { Actions } from './actions.ts'
 import { launch, launchSide, stepBalls, type Ball } from './ball.ts'
-import { keepInArena, pushOut, type Collider } from './collider.ts'
+import type { Collider } from './collider.ts'
 import { strike } from './combat.ts'
 import {
   createChaser,
@@ -10,7 +10,7 @@ import {
   type Enemy,
 } from './enemy.ts'
 import type { Rng } from './rng.ts'
-import { headingUp, move, type Ship } from './ship.ts'
+import { headingUp, move, moveHull, type Ship } from './ship.ts'
 import { spawnIntervalAt, stepSpawns } from './spawn.ts'
 
 export type MatchStatus = 'running' | 'paused' | 'ended'
@@ -44,6 +44,7 @@ export function createWorld(
     y: config.arena.height / 2,
     heading: headingUp,
     radius: config.ships.player.radius,
+    hullOffset: config.ships.player.hullOffset,
     hp: config.ships.player.hp,
   }
   return {
@@ -108,8 +109,7 @@ export function step(world: World, dt: number, actions: Actions): void {
     actions.turn,
     actions.thrust,
   )
-  pushOut(world.player, world.colliders)
-  keepInArena(world.player, world.config.arena)
+  moveHull(world.player, world.colliders, world.config.arena)
   const ball = world.config.ball
   const cannon = world.config.cannon
   world.frontCooldown = tickCannon(
@@ -150,7 +150,7 @@ export function step(world: World, dt: number, actions: Actions): void {
       ),
   )
   stepBalls(world.balls, slice, ball, world.config.arena, world.colliders)
-  world.score += strike(world.balls, world.player, world.enemies)
+  world.score += strike(world.balls, world.player, world.enemies, ball.radius)
   if (world.player.hp > 0) {
     stepEnemies(
       world.enemies,

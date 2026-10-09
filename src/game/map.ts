@@ -9,7 +9,7 @@ export type Island = {
   x: number
   y: number
   tiles: number[][]
-  collider: Collider
+  colliders: Collider[]
 }
 
 const sandTiles = [
@@ -25,34 +25,66 @@ const grassTiles = [
   [54, 55, 56, 57],
 ]
 
-const grassInset = 12
+const sandRadius = 94
+const sandCorner = { offset: 57, radius: 30 }
+const grassRadius = 126
+const grassCorner = { offset: 78, radius: 36 }
 
 function sandIsland(x: number, y: number): Island {
-  const span = tileSize * sandTiles.length
-  const radius = span / 2
   return {
     x,
     y,
     tiles: sandTiles,
-    collider: { shape: 'circle', x: x + radius, y: y + radius, radius },
+    colliders: islandCircles(x, y, sandTiles, sandRadius, sandCorner),
   }
 }
 
 function grassIsland(x: number, y: number): Island {
-  const span = tileSize * grassTiles.length
-  const size = span - grassInset * 2
   return {
     x,
     y,
     tiles: grassTiles,
-    collider: {
-      shape: 'rect',
-      x: x + grassInset,
-      y: y + grassInset,
-      width: size,
-      height: size,
-    },
+    colliders: islandCircles(x, y, grassTiles, grassRadius, grassCorner),
   }
+}
+
+function islandCircles(
+  x: number,
+  y: number,
+  tiles: number[][],
+  radius: number,
+  corner: { offset: number; radius: number },
+): Collider[] {
+  const center = (tileSize * tiles.length) / 2
+  const spots = [
+    { x: center, y: center, radius },
+    {
+      x: center - corner.offset,
+      y: center - corner.offset,
+      radius: corner.radius,
+    },
+    {
+      x: center + corner.offset,
+      y: center - corner.offset,
+      radius: corner.radius,
+    },
+    {
+      x: center - corner.offset,
+      y: center + corner.offset,
+      radius: corner.radius,
+    },
+    {
+      x: center + corner.offset,
+      y: center + corner.offset,
+      radius: corner.radius,
+    },
+  ]
+  return spots.map((spot) => ({
+    shape: 'circle',
+    x: x + spot.x,
+    y: y + spot.y,
+    radius: spot.radius,
+  }))
 }
 
 export const layouts: Island[][] = [

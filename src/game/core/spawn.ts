@@ -3,7 +3,7 @@ import { pushOut, type Collider } from './collider.ts'
 import { createChaser, createShooter, type Enemy } from './enemy.ts'
 import { clamp, distance } from './math.ts'
 import type { Rng } from './rng.ts'
-import type { Ship } from './ship.ts'
+import { hullBody, type Ship } from './ship.ts'
 
 const spotAttempts = 16
 
@@ -44,11 +44,9 @@ export function stepSpawns(world: SpawnWorld, dt: number): void {
 
 function summon(world: SpawnWorld): void {
   const type = pickType(world)
-  const radius =
-    type === 'chaser'
-      ? world.config.ships.chaser.radius
-      : world.config.ships.shooter.radius
-  const spot = findSpot(world, radius)
+  const stats =
+    type === 'chaser' ? world.config.ships.chaser : world.config.ships.shooter
+  const spot = findSpot(world, stats.radius, stats.hullOffset)
   if (!spot) return
   const enemy =
     type === 'chaser'
@@ -67,15 +65,27 @@ function pickType(world: SpawnWorld): Enemy['type'] {
 function findSpot(
   world: SpawnWorld,
   radius: number,
+  hullOffset: number,
 ): { x: number; y: number } | null {
   const { arena, minSpawnDistance } = world.config
   for (let attempt = 0; attempt < spotAttempts; attempt += 1) {
     const x = world.rng.range(radius, arena.width - radius)
     const y = world.rng.range(radius, arena.height - radius)
     if (distance({ x, y }, world.player) < minSpawnDistance) continue
-    const body = { x, y, radius }
+    const heading = Math.atan2(world.player.y - y, world.player.x - x)
+    const body = hullBody({ x, y, heading, radius, hullOffset })
+    const ox = body.x
+    const oy = body.y
     pushOut(body, world.colliders)
-    if (body.x !== x || body.y !== y) continue
+    if (body.x !== ox || body.y !== oy) continue
+    if (
+      body.x < body.radius ||
+      body.y < body.radius ||
+      body.x > arena.width - body.radius ||
+      body.y > arena.height - body.radius
+    ) {
+      continue
+    }
     return { x, y }
   }
   return null

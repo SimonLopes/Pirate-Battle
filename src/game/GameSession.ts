@@ -52,12 +52,14 @@ export class GameSession {
     this.config = structuredClone(config)
     this.world = createWorld(
       this.config,
-      islands.map((island) => island.collider),
+      islands.flatMap((island) => island.colliders),
       rng,
     )
     this.actions = idleActions()
     this.touch = idleTouch()
-    this.renderer = createRenderer(app.stage, islands)
+    const debug =
+      new URLSearchParams(window.location.search).get('debug') === '1'
+    this.renderer = createRenderer(app.stage, islands, debug)
     document.addEventListener('visibilitychange', this.onHide)
     window.addEventListener('blur', this.onBlur)
   }

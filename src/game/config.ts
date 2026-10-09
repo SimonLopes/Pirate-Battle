@@ -2,6 +2,8 @@ type ShipStats = {
   hp: number
   moveSpeed: number
   turnSpeed: number
+  radius: number
+  hullOffset: number
 }
 
 export type GameConfig = {
@@ -19,13 +21,11 @@ export type GameConfig = {
   }
   minSpawnDistance: number
   ships: {
-    player: ShipStats & { radius: number }
+    player: ShipStats
     chaser: ShipStats & {
-      radius: number
       collisionDamage: number
     }
     shooter: ShipStats & {
-      radius: number
       attackRange: number
       attackCooldown: number
     }
@@ -35,6 +35,7 @@ export type GameConfig = {
     damage: number
     lifetime: number
     range: number
+    radius: number
   }
   cannon: {
     frontCooldown: number
@@ -66,19 +67,27 @@ export const defaultConfig: GameConfig = {
   },
   minSpawnDistance: 520,
   ships: {
-    player: { hp: 100, moveSpeed: 180, turnSpeed: 2, radius: 57 },
+    player: {
+      hp: 100,
+      moveSpeed: 180,
+      turnSpeed: 2,
+      radius: 21,
+      hullOffset: 34,
+    },
     chaser: {
       hp: 30,
       moveSpeed: 150,
       turnSpeed: 2.4,
-      radius: 57,
+      radius: 21,
+      hullOffset: 34,
       collisionDamage: 25,
     },
     shooter: {
       hp: 40,
       moveSpeed: 110,
       turnSpeed: 1.6,
-      radius: 57,
+      radius: 21,
+      hullOffset: 34,
       attackRange: 360,
       attackCooldown: 1.5,
     },
@@ -88,6 +97,7 @@ export const defaultConfig: GameConfig = {
     damage: 10,
     lifetime: 1.2,
     range: 480,
+    radius: 5,
   },
   cannon: {
     frontCooldown: 0.45,

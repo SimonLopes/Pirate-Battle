@@ -1,7 +1,7 @@
 import type { GameConfig } from '../config.ts'
-import { hits, type Collider } from './collider.ts'
+import { overlaps, type Collider } from './collider.ts'
 import { fromAngle, type Vec2 } from './math.ts'
-import type { Ship } from './ship.ts'
+import { hullBody, type Ship } from './ship.ts'
 
 export type BallOwner = 'player' | 'enemy'
 
@@ -23,15 +23,8 @@ export function launch(
   owner: BallOwner,
 ): void {
   const dir = fromAngle(ship.heading)
-  balls.push(
-    makeBall(
-      ship.x + dir.x * ship.radius,
-      ship.y + dir.y * ship.radius,
-      dir,
-      stats,
-      owner,
-    ),
-  )
+  const at = fromHull(ship, 0, dir)
+  balls.push(makeBall(at.x, at.y, dir, stats, owner))
 }
 
 export function launchSide(
@@ -42,19 +35,19 @@ export function launchSide(
   side: -1 | 1,
   owner: BallOwner,
 ): void {
-  const forward = fromAngle(ship.heading)
   const dir = fromAngle(ship.heading + (side * Math.PI) / 2)
   for (let slot = -1; slot <= 1; slot += 1) {
-    const along = slot * spacing
-    balls.push(
-      makeBall(
-        ship.x + forward.x * along + dir.x * ship.radius,
-        ship.y + forward.y * along + dir.y * ship.radius,
-        dir,
-        stats,
-        owner,
-      ),
-    )
+    const at = fromHull(ship, slot * spacing, dir)
+    balls.push(makeBall(at.x, at.y, dir, stats, owner))
+  }
+}
+
+function fromHull(ship: Ship, along: number, dir: Vec2): Vec2 {
+  const forward = fromAngle(ship.heading)
+  const center = hullBody(ship)
+  return {
+    x: center.x + forward.x * along + dir.x * center.radius,
+    y: center.y + forward.y * along + dir.y * center.radius,
   }
 }
 
@@ -97,14 +90,16 @@ export function stepBalls(
     if (ball.lifetime <= 0) continue
     if (ball.traveled > stats.range) continue
     if (
-      ball.x < 0 ||
-      ball.y < 0 ||
-      ball.x > arena.width ||
-      ball.y > arena.height
+      ball.x < stats.radius ||
+      ball.y < stats.radius ||
+      ball.x > arena.width - stats.radius ||
+      ball.y > arena.height - stats.radius
     ) {
       continue
     }
-    if (hits(ball, colliders)) continue
+    if (overlaps({ x: ball.x, y: ball.y, radius: stats.radius }, colliders)) {
+      continue
+    }
     balls[write] = ball
     write += 1
   }

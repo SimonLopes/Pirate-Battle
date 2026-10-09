@@ -1,8 +1,8 @@
 import type { GameConfig } from '../config.ts'
 import { launch, type Ball } from './ball.ts'
-import { keepInArena, pushOut, type Collider } from './collider.ts'
+import type { Collider } from './collider.ts'
 import { clamp, distance, fromAngle, wrapAngle } from './math.ts'
-import type { Ship } from './ship.ts'
+import { hullBody, moveHull, type Ship } from './ship.ts'
 
 export type EnemyType = 'chaser' | 'shooter'
 
@@ -22,6 +22,7 @@ export function createChaser(
     y,
     heading: Math.atan2(player.y - y, player.x - x),
     radius: stats.radius,
+    hullOffset: stats.hullOffset,
     hp: stats.hp,
   }
 }
@@ -39,6 +40,7 @@ export function createShooter(
     y,
     heading: Math.atan2(player.y - y, player.x - x),
     radius: stats.radius,
+    hullOffset: stats.hullOffset,
     hp: stats.hp,
     cooldown: 0,
   }
@@ -65,8 +67,7 @@ export function stepEnemies(
       const stats = config.ships.chaser
       steer(enemy, player, dt, stats.turnSpeed)
       advance(enemy, dt, stats.moveSpeed)
-      pushOut(enemy, colliders)
-      keepInArena(enemy, config.arena)
+      moveHull(enemy, colliders, config.arena)
       if (touch(enemy, player)) {
         player.hp = Math.max(0, player.hp - stats.collisionDamage)
         continue
@@ -77,8 +78,7 @@ export function stepEnemies(
       if (distance(enemy, player) > stats.attackRange) {
         advance(enemy, dt, stats.moveSpeed)
       }
-      pushOut(enemy, colliders)
-      keepInArena(enemy, config.arena)
+      moveHull(enemy, colliders, config.arena)
       enemy.cooldown = Math.max(0, enemy.cooldown - dt)
       if (
         enemy.cooldown === 0 &&
@@ -113,8 +113,10 @@ function advance(enemy: Enemy, dt: number, moveSpeed: number): void {
 }
 
 function touch(a: Ship, b: Ship): boolean {
-  const dx = a.x - b.x
-  const dy = a.y - b.y
-  const reach = a.radius + b.radius
+  const left = hullBody(a)
+  const right = hullBody(b)
+  const dx = left.x - right.x
+  const dy = left.y - right.y
+  const reach = left.radius + right.radius
   return dx * dx + dy * dy <= reach * reach
 }

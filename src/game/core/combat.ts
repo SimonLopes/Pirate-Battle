@@ -1,8 +1,13 @@
 import type { Ball } from './ball.ts'
 import type { Enemy } from './enemy.ts'
-import type { Ship } from './ship.ts'
+import { hullBody, type Ship } from './ship.ts'
 
-export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
+export function strike(
+  balls: Ball[],
+  player: Ship,
+  enemies: Enemy[],
+  ballRadius: number,
+): number {
   let scored = 0
   let write = 0
   for (let read = 0; read < balls.length; read += 1) {
@@ -14,7 +19,7 @@ export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
       continue
     }
     if (ball.owner === 'player') {
-      const enemy = enemyAt(ball, enemies)
+      const enemy = enemyAt(ball, enemies, ballRadius)
       if (!enemy) {
         balls[write] = ball
         write += 1
@@ -24,7 +29,7 @@ export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
       if (enemy.hp <= 0) scored += 1
       continue
     }
-    if (overlaps(ball, player)) {
+    if (overlaps(ball, player, ballRadius)) {
       player.hp = Math.max(0, player.hp - ball.damage)
       continue
     }
@@ -36,13 +41,18 @@ export function strike(balls: Ball[], player: Ship, enemies: Enemy[]): number {
   return scored
 }
 
-function enemyAt(ball: Ball, enemies: readonly Enemy[]): Enemy | undefined {
+function enemyAt(
+  ball: Ball,
+  enemies: readonly Enemy[],
+  ballRadius: number,
+): Enemy | undefined {
   let found: Enemy | undefined
   let best = Infinity
   for (const enemy of enemies) {
-    if (enemy.hp <= 0 || !overlaps(ball, enemy)) continue
-    const dx = ball.x - enemy.x
-    const dy = ball.y - enemy.y
+    if (enemy.hp <= 0 || !overlaps(ball, enemy, ballRadius)) continue
+    const hull = hullBody(enemy)
+    const dx = ball.x - hull.x
+    const dy = ball.y - hull.y
     const distSq = dx * dx + dy * dy
     if (distSq >= best) continue
     best = distSq
@@ -51,10 +61,12 @@ function enemyAt(ball: Ball, enemies: readonly Enemy[]): Enemy | undefined {
   return found
 }
 
-function overlaps(ball: Ball, ship: Ship): boolean {
-  const dx = ball.x - ship.x
-  const dy = ball.y - ship.y
-  return dx * dx + dy * dy <= ship.radius * ship.radius
+function overlaps(ball: Ball, ship: Ship, ballRadius: number): boolean {
+  const hull = hullBody(ship)
+  const dx = ball.x - hull.x
+  const dy = ball.y - hull.y
+  const reach = hull.radius + ballRadius
+  return dx * dx + dy * dy <= reach * reach
 }
 
 function removeDead(enemies: Enemy[]): void {

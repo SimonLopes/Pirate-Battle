@@ -1,4 +1,4 @@
-import { clamp, length, scale, type Vec2 } from './math.ts'
+import { clamp, length, scale } from './math.ts'
 
 export type Collider =
   | { shape: 'circle'; x: number; y: number; radius: number }
@@ -25,22 +25,20 @@ export function keepInArena(
   body.y = clamp(body.y, body.radius, arena.height - body.radius)
 }
 
-export function hits(point: Vec2, colliders: readonly Collider[]): boolean {
+export function overlaps(body: Body, colliders: readonly Collider[]): boolean {
   for (const collider of colliders) {
     if (collider.shape === 'circle') {
-      const dx = point.x - collider.x
-      const dy = point.y - collider.y
-      if (dx * dx + dy * dy <= collider.radius * collider.radius) return true
+      const dx = body.x - collider.x
+      const dy = body.y - collider.y
+      const reach = body.radius + collider.radius
+      if (dx * dx + dy * dy <= reach * reach) return true
       continue
     }
-    if (
-      point.x >= collider.x &&
-      point.y >= collider.y &&
-      point.x <= collider.x + collider.width &&
-      point.y <= collider.y + collider.height
-    ) {
-      return true
-    }
+    const nearestX = clamp(body.x, collider.x, collider.x + collider.width)
+    const nearestY = clamp(body.y, collider.y, collider.y + collider.height)
+    const dx = body.x - nearestX
+    const dy = body.y - nearestY
+    if (dx * dx + dy * dy <= body.radius * body.radius) return true
   }
   return false
 }
