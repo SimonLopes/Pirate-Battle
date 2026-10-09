@@ -62,10 +62,20 @@ function enemyAt(
 }
 
 function overlaps(ball: Ball, ship: Ship, ballRadius: number): boolean {
-  const hull = hullBody(ship)
-  const dx = ball.x - hull.x
-  const dy = ball.y - hull.y
-  const reach = hull.radius + ballRadius
+  const bow = hullBody(ship)
+  const axisX = bow.x - ship.x
+  const axisY = bow.y - ship.y
+  const lenSq = axisX * axisX + axisY * axisY
+  let along = 0
+  if (lenSq > 0) {
+    along = ((ball.x - ship.x) * axisX + (ball.y - ship.y) * axisY) / lenSq
+    along = Math.min(1, Math.max(-1, along))
+  }
+  const nearX = ship.x + axisX * along
+  const nearY = ship.y + axisY * along
+  const dx = ball.x - nearX
+  const dy = ball.y - nearY
+  const reach = bow.radius + ballRadius
   return dx * dx + dy * dy <= reach * reach
 }
 
