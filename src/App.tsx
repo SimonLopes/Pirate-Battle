@@ -52,6 +52,7 @@ function App() {
       reason: next.reason,
       sessionTime: matchConfig.sessionDuration,
       spawnInterval: matchConfig.spawnInterval,
+      playerName: options.captainName,
     })
     matchSave.submit(record)
     saveResult(next)

@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { sessionDurationLimits, spawnIntervalLimits } from '../game/config.ts'
 import {
+  captainNameError,
   sessionTimeError,
   spawnTimeError,
   stepSeconds,
@@ -30,34 +31,41 @@ export function Options({
   onSave: (options: PlayerOptions) => void
   onBack: () => void
 }) {
+  const nameRef = useRef<HTMLInputElement>(null)
   const sessionRef = useRef<HTMLInputElement>(null)
   const spawnRef = useRef<HTMLInputElement>(null)
+  const [captainName, setCaptainName] = useState(saved.captainName)
   const [sessionTime, setSessionTime] = useState(String(saved.sessionDuration))
   const [spawnTime, setSpawnTime] = useState(String(saved.spawnInterval))
   const [fullscreenOnMobile, setFullscreenOnMobile] = useState(
     saved.fullscreenOnMobile,
   )
+  const [nameError, setNameError] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [spawnError, setSpawnError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (attempt === 0) return
-    if (sessionError) sessionRef.current?.focus()
+    if (nameError) nameRef.current?.focus()
+    else if (sessionError) sessionRef.current?.focus()
     else if (spawnError) spawnRef.current?.focus()
-  }, [attempt, sessionError, spawnError])
+  }, [attempt, nameError, sessionError, spawnError])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const nextNameError = captainNameError(captainName)
     const nextSessionError = sessionTimeError(sessionTime)
     const nextSpawnError = spawnTimeError(spawnTime)
+    setNameError(nextNameError)
     setSessionError(nextSessionError)
     setSpawnError(nextSpawnError)
-    if (nextSessionError || nextSpawnError) {
+    if (nextNameError || nextSessionError || nextSpawnError) {
       setAttempt((value) => value + 1)
       return
     }
     const next = {
+      captainName: captainName.trim(),
       sessionDuration: Number(sessionTime.trim()),
       spawnInterval: Number(spawnTime.trim()),
       fullscreenOnMobile,
@@ -70,6 +78,31 @@ export function Options({
     <Panel>
       <h1 className="menu-heading">Options</h1>
       <form className="option-form" noValidate onSubmit={submit}>
+        <div className="option-field">
+          <label className="option-label" htmlFor="captain-name">
+            Captain name
+          </label>
+          <input
+            ref={nameRef}
+            id="captain-name"
+            className="option-name"
+            value={captainName}
+            autoComplete="nickname"
+            spellCheck={false}
+            required
+            aria-invalid={nameError !== null}
+            aria-describedby={nameError ? 'captain-name-error' : undefined}
+            onChange={(event) => {
+              setCaptainName(event.target.value)
+              setNameError(null)
+            }}
+          />
+          {nameError && (
+            <p id="captain-name-error" className="option-error" role="alert">
+              {nameError}
+            </p>
+          )}
+        </div>
         <TimeField
           id="session-time"
           label="Game session time"

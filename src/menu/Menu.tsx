@@ -49,10 +49,11 @@ export function Menu({
     <main className="menu-scene">
       {view === 'home' && (
         <Home
+          captainName={options.captainName}
           isOptionsUnsaved={isOptionsUnsaved}
           last={last}
           onPlay={onPlay}
-          onOptions={() => show('options', 'session-time')}
+          onOptions={() => show('options', 'captain-name')}
           onTab={(tab) => show(tab, tabId(tab))}
         />
       )}
@@ -79,12 +80,14 @@ export function Menu({
 }
 
 function Home({
+  captainName,
   isOptionsUnsaved,
   last,
   onPlay,
   onOptions,
   onTab,
 }: {
+  captainName: string
   isOptionsUnsaved: boolean
   last: MatchResult | null
   onPlay: () => void
@@ -99,6 +102,10 @@ function Home({
         <h1 className="menu-title">
           <img src={titleArt} alt="Pirate Battle" draggable={false} />
         </h1>
+        <p className="menu-captain">
+          <span className="sr-only">Captain name: </span>
+          {captainName}
+        </p>
         <p className="menu-tagline">Set sail. Take command.</p>
         <div className="menu-stack">
           <Button id="menu-play" onClick={onPlay}>

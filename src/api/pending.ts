@@ -1,4 +1,4 @@
-import { loadPlayerId, playerName } from './player.ts'
+import { loadPlayerId } from './player.ts'
 import { readStorage, removeStorage, writeStorage } from '../storage.ts'
 import { isMatchRecord, parseJson } from '../validate.ts'
 import type { EndReason, MatchRecord } from './types.ts'
@@ -15,11 +15,12 @@ export function createPendingMatch(input: {
   reason: EndReason
   sessionTime: number
   spawnInterval: number
+  playerName: string
 }): MatchRecord {
   return {
     matchId: crypto.randomUUID(),
     playerId: loadPlayerId(),
-    playerName,
+    playerName: input.playerName,
     playedAt: new Date().toISOString(),
     score: input.score,
     durationMs: Math.round(input.played * 1000),
