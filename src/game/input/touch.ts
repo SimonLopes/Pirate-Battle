@@ -1,3 +1,5 @@
+import { wrapAngle } from '../core/math.ts'
+
 export type Insets = {
   top: number
   right: number
@@ -19,13 +21,24 @@ export type TouchBindings = Record<TouchBinding, boolean>
 
 export type TouchLayout = {
   insets: Insets
-  forward: Box
-  turnLeft: Box
-  turnRight: Box
+  stick: Box
+  knob: number
   fireFront: Box
   fireLeft: Box
   fireRight: Box
   pause: Box
+}
+
+export type StickAim = {
+  x: number
+  y: number
+  radius: number
+}
+
+export type StickMove = {
+  forward: boolean
+  turnLeft: boolean
+  turnRight: boolean
 }
 
 export const zeroInsets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }
@@ -35,6 +48,32 @@ const minimum = 44
 const gap = 10
 const pad = 12
 const edge = 8
+const stickDeadZone = 0.2
+const steerBand = 0.05
+
+const idleStick: StickMove = {
+  forward: false,
+  turnLeft: false,
+  turnRight: false,
+}
+
+export function stickMove(heading: number, aim: StickAim): StickMove {
+  if (aim.radius <= 0) return idleStick
+  const dist = Math.hypot(aim.x, aim.y)
+  if (dist <= aim.radius * stickDeadZone) return idleStick
+  const delta = wrapAngle(Math.atan2(aim.y, aim.x) - heading)
+  if (delta <= -steerBand) {
+    return { forward: true, turnLeft: true, turnRight: false }
+  }
+  if (delta >= steerBand) {
+    return { forward: true, turnLeft: false, turnRight: true }
+  }
+  return { forward: true, turnLeft: false, turnRight: false }
+}
+
+function stickWell(size: number): number {
+  return size * 2 + gap
+}
 
 export function idleTouch(): TouchBindings {
   return {
@@ -91,19 +130,20 @@ function fits(
   hudHeight: number,
   safe: Insets,
 ): boolean {
+  const well = stickWell(size)
   if (sides) {
     const columnH = size * 4 + gap * 3
     if (hudHeight + pad + columnH + pad + safe.bottom > viewH) return false
     const left = Math.max(safe.left, edge)
     const right = viewW - Math.max(safe.right, edge) - size
-    return left + size + pad <= right
+    return left + well + pad <= right
   }
   const rowW = size * 3 + gap * 2
-  const pauseY = viewH - Math.max(safe.bottom, edge) - pad - size * 2 - gap
+  const pauseY = viewH - Math.max(safe.bottom, edge) - pad - well
   if (pauseY < hudHeight + pad) return false
   const left = Math.max(safe.left, edge)
   const right = viewW - Math.max(safe.right, edge) - rowW
-  return left + rowW + pad <= right
+  return left + well + pad <= right
 }
 
 function sideLayout(
@@ -114,19 +154,16 @@ function sideLayout(
   safe: Insets,
   arena: { width: number; height: number },
 ): TouchLayout {
-  const leftH = size * 3 + gap * 2
+  const well = stickWell(size)
   const rightH = size * 4 + gap * 3
-  const yLeft = Math.max(
-    hudHeight + pad,
-    viewH - Math.max(safe.bottom, edge) - pad - leftH,
-  )
   const yRight = Math.max(
     hudHeight + pad,
     viewH - Math.max(safe.bottom, edge) - pad - rightH,
   )
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - size
-  const leftLimit = leftX + size + pad
+  const yStick = yRight + rightH - well
+  const leftLimit = leftX + well + pad
   const rightLimit = rightX - pad
   const natural = arenaBox(viewW, viewH, arena, zeroInsets)
   const insets = { ...zeroInsets }
@@ -137,9 +174,8 @@ function sideLayout(
   const step = size + gap
   return {
     insets,
-    forward: { x: leftX, y: yLeft, w: size, h: size },
-    turnLeft: { x: leftX, y: yLeft + step, w: size, h: size },
-    turnRight: { x: leftX, y: yLeft + step * 2, w: size, h: size },
+    stick: { x: leftX, y: yStick, w: well, h: well },
+    knob: size,
     pause: { x: rightX, y: yRight, w: size, h: size },
     fireFront: { x: rightX, y: yRight + step, w: size, h: size },
     fireLeft: { x: rightX, y: yRight + step * 2, w: size, h: size },
@@ -155,29 +191,29 @@ function bottomLayout(
   safe: Insets,
   arena: { width: number; height: number },
 ): TouchLayout {
+  const well = stickWell(size)
   const rowW = size * 3 + gap * 2
-  const y = Math.max(
-    hudHeight + pad + size + gap,
-    viewH - Math.max(safe.bottom, edge) - pad - size,
+  const pauseY = Math.max(
+    hudHeight + pad,
+    viewH - Math.max(safe.bottom, edge) - pad - well,
   )
+  const y = pauseY + size + gap
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - rowW
-  const pauseY = y - size - gap
   const limit = pauseY - pad
   const natural = arenaBox(viewW, viewH, arena, zeroInsets)
   const insets = { ...zeroInsets }
   if (natural.y + natural.h > limit) insets.bottom = viewH - limit
   return {
     insets,
+    stick: { x: leftX, y: pauseY, w: well, h: well },
+    knob: size,
     pause: {
       x: rightX + (rowW - size) / 2,
       y: pauseY,
       w: size,
       h: size,
     },
-    turnLeft: { x: leftX, y, w: size, h: size },
-    forward: { x: leftX + size + gap, y, w: size, h: size },
-    turnRight: { x: leftX + (size + gap) * 2, y, w: size, h: size },
     fireLeft: { x: rightX, y, w: size, h: size },
     fireFront: { x: rightX + size + gap, y, w: size, h: size },
     fireRight: { x: rightX + (size + gap) * 2, y, w: size, h: size },

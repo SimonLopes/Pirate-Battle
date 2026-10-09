@@ -9,7 +9,13 @@ import {
 } from 'react'
 import type { GameSession } from '../GameSession.ts'
 import type { HudStore } from '../hud/store.ts'
-import type { Box, TouchBinding, TouchLayout } from './touch.ts'
+import {
+  stickMove,
+  type Box,
+  type StickAim,
+  type TouchBinding,
+  type TouchLayout,
+} from './touch.ts'
 
 const art = '/assets/png/default/ui/controls'
 const faces = {
@@ -22,21 +28,10 @@ const roundArt = 64
 const roundIcon = 32
 
 const pads: {
-  binding: TouchBinding
+  binding: 'fireFront' | 'fireLeft' | 'fireRight'
   label: string
   icon: string
 }[] = [
-  { binding: 'forward', label: 'Forward', icon: `${art}/icon_forward.png` },
-  {
-    binding: 'turnLeft',
-    label: 'Turn left',
-    icon: `${art}/icon_turn_left.png`,
-  },
-  {
-    binding: 'turnRight',
-    label: 'Turn right',
-    icon: `${art}/icon_turn_right.png`,
-  },
   {
     binding: 'fireFront',
     label: 'Fire front',
@@ -84,6 +79,12 @@ export function TouchControls({
       inert={!running}
       style={overlay}
     >
+      <Joystick
+        box={layout.stick}
+        knob={layout.knob}
+        running={running}
+        sessionRef={sessionRef}
+      />
       {pads.map((pad) => (
         <HoldButton
           key={pad.binding}
@@ -100,6 +101,116 @@ export function TouchControls({
         running={running}
         sessionRef={sessionRef}
       />
+    </div>
+  )
+}
+
+function Joystick({
+  box,
+  knob,
+  running,
+  sessionRef,
+}: {
+  box: Box
+  knob: number
+  running: boolean
+  sessionRef: RefObject<GameSession | null>
+}) {
+  const wellRef = useRef<HTMLDivElement>(null)
+  const active = useRef<number | null>(null)
+  const point = useRef({ x: 0, y: 0 })
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [tracking, setTracking] = useState(false)
+  const [play, setPlay] = useState(running)
+  if (play !== running) {
+    setPlay(running)
+    if (!running) {
+      setTracking(false)
+      setOffset({ x: 0, y: 0 })
+    }
+  }
+
+  useEffect(() => {
+    if (!tracking) return
+    let frame = 0
+    const tick = () => {
+      frame = requestAnimationFrame(tick)
+      const session = sessionRef.current
+      const node = wellRef.current
+      if (!session || !node || active.current === null) return
+      applyStick(
+        session,
+        readStick(node, point.current.x, point.current.y, knob),
+      )
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [knob, sessionRef, tracking])
+
+  useEffect(() => {
+    if (running) return
+    const node = wellRef.current
+    const pointerId = active.current
+    active.current = null
+    if (node && pointerId !== null) releaseCaptured(node, pointerId)
+    clearStick(sessionRef.current)
+  }, [running, sessionRef])
+
+  useEffect(() => {
+    const session = sessionRef
+    return () => {
+      active.current = null
+      clearStick(session.current)
+    }
+  }, [sessionRef])
+
+  const follow = (well: HTMLDivElement, clientX: number, clientY: number) => {
+    point.current = { x: clientX, y: clientY }
+    const aim = readStick(well, clientX, clientY, knob)
+    setOffset({ x: aim.x, y: aim.y })
+    const session = sessionRef.current
+    if (!session) return
+    applyStick(session, aim)
+  }
+
+  const press = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!running || active.current !== null) return
+    event.preventDefault()
+    capturePointer(event.currentTarget, event.pointerId)
+    active.current = event.pointerId
+    follow(event.currentTarget, event.clientX, event.clientY)
+    setTracking(true)
+  }
+
+  const move = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (active.current !== event.pointerId) return
+    event.preventDefault()
+    follow(event.currentTarget, event.clientX, event.clientY)
+  }
+
+  const release = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (active.current !== event.pointerId) return
+    active.current = null
+    setTracking(false)
+    setOffset({ x: 0, y: 0 })
+    clearStick(sessionRef.current)
+  }
+
+  return (
+    <div
+      ref={wellRef}
+      role="group"
+      aria-label="Move"
+      onPointerDown={press}
+      onPointerMove={move}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onLostPointerCapture={release}
+      onContextMenu={(event) => event.preventDefault()}
+      style={stickStyle(box)}
+    >
+      <span aria-hidden style={stickBaseStyle} />
+      <span aria-hidden style={knobStyle(knob, offset.x, offset.y)} />
     </div>
   )
 }
@@ -271,6 +382,54 @@ const overlay: CSSProperties = {
   pointerEvents: 'none',
 }
 
+const stickBaseStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  backgroundColor: 'transparent',
+  backgroundImage: `url(${faces.normal})`,
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  backgroundSize: '100% 100%',
+  opacity: 0.72,
+  pointerEvents: 'none',
+}
+
+function stickStyle(box: Box): CSSProperties {
+  return {
+    position: 'absolute',
+    left: box.x,
+    top: box.y,
+    width: box.w,
+    height: box.h,
+    margin: 0,
+    padding: 0,
+    border: 'none',
+    background: 'transparent',
+    touchAction: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+    pointerEvents: 'auto',
+  }
+}
+
+function knobStyle(size: number, x: number, y: number): CSSProperties {
+  return {
+    position: 'absolute',
+    left: `calc(50% + ${x}px)`,
+    top: `calc(50% + ${y}px)`,
+    width: size,
+    height: size,
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: 'transparent',
+    backgroundImage: `url(${faces.normal})`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '100% 100%',
+    pointerEvents: 'none',
+  }
+}
+
 const iconStyle: CSSProperties = {
   position: 'absolute',
   left: '50%',
@@ -282,9 +441,53 @@ const iconStyle: CSSProperties = {
   userSelect: 'none',
 }
 
-function capturePointer(button: HTMLButtonElement, pointerId: number) {
+function applyStick(session: GameSession, aim: StickAim) {
+  if (session.world.status !== 'running') return
+  const move = stickMove(session.world.player.heading, aim)
+  session.setTouch('forward', move.forward)
+  session.setTouch('turnLeft', move.turnLeft)
+  session.setTouch('turnRight', move.turnRight)
+}
+
+function clearStick(session: GameSession | null) {
+  if (!session) return
+  session.setTouch('forward', false)
+  session.setTouch('turnLeft', false)
+  session.setTouch('turnRight', false)
+}
+
+function readStick(
+  well: HTMLDivElement,
+  clientX: number,
+  clientY: number,
+  knob: number,
+): StickAim {
+  const radius = Math.max(0, (well.clientWidth - knob) / 2)
+  const rect = well.getBoundingClientRect()
+  let x = clientX - (rect.left + rect.width / 2)
+  let y = clientY - (rect.top + rect.height / 2)
+  const dist = Math.hypot(x, y)
+  if (dist > radius && dist > 0) {
+    const scale = radius / dist
+    x *= scale
+    y *= scale
+  }
+  return { x, y, radius }
+}
+
+function capturePointer(target: HTMLElement, pointerId: number) {
   try {
-    button.setPointerCapture(pointerId)
+    target.setPointerCapture(pointerId)
+  } catch (error) {
+    if (!(error instanceof DOMException)) throw error
+  }
+}
+
+function releaseCaptured(target: HTMLElement, pointerId: number) {
+  try {
+    if (target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId)
+    }
   } catch (error) {
     if (!(error instanceof DOMException)) throw error
   }
