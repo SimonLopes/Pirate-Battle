@@ -1,3 +1,10 @@
+import {
+  isEndReason,
+  isNonNegativeInteger,
+  isNonNegativeNumber,
+  isRecord,
+  parseJson,
+} from '../validate.ts'
 import type { EndReason } from './core/world.ts'
 
 const storageKey = 'pirate-battle.result'
@@ -9,48 +16,24 @@ export type MatchResult = {
 }
 
 export function loadResult(): MatchResult | null {
-  try {
-    const raw = localStorage.getItem(storageKey)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (!isMatchResult(parsed)) return null
-    return {
-      score: parsed.score,
-      played: parsed.played,
-      reason: parsed.reason,
-    }
-  } catch {
-    return null
+  const parsed = parseJson(localStorage.getItem(storageKey))
+  if (!isMatchResult(parsed)) return null
+  return {
+    score: parsed.score,
+    played: parsed.played,
+    reason: parsed.reason,
   }
 }
 
 export function saveResult(result: MatchResult): void {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(result))
-  } catch {
-    return
-  }
+  localStorage.setItem(storageKey, JSON.stringify(result))
 }
 
 function isMatchResult(value: unknown): value is MatchResult {
   if (!isRecord(value)) return false
   return (
-    isScore(value.score) && isPlayed(value.played) && isReason(value.reason)
+    isNonNegativeInteger(value.score) &&
+    isNonNegativeNumber(value.played) &&
+    isEndReason(value.reason)
   )
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function isScore(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0
-}
-
-function isPlayed(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
-}
-
-function isReason(value: unknown): value is EndReason {
-  return value === 'time' || value === 'death'
 }

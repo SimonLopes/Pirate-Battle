@@ -1,3 +1,5 @@
+import { isRecord, parseJson } from '../validate.ts'
+
 export const networkScenarios = [
   'success',
   'empty',
@@ -85,8 +87,6 @@ export function resetScenarioRuntime(): void {
 
 function loadSettings(): NetworkSettings {
   const stored = readStoredSettings()
-  if (typeof window === 'undefined') return stored
-
   const params = new URL(window.location.href).searchParams
   return {
     scenario: toScenario(params.get('scenario')) ?? stored.scenario,
@@ -95,36 +95,19 @@ function loadSettings(): NetworkSettings {
 }
 
 function readStoredSettings(): NetworkSettings {
-  if (typeof localStorage === 'undefined') {
-    return { ...defaultNetworkSettings }
-  }
-
-  try {
-    const raw = localStorage.getItem(settingsStorageKey)
-    if (!raw) return { ...defaultNetworkSettings }
-    const parsed: unknown = JSON.parse(raw)
-    if (!isRecord(parsed)) return { ...defaultNetworkSettings }
-    return {
-      scenario: toScenario(parsed.scenario) ?? defaultNetworkSettings.scenario,
-      seed: toSeed(parsed.seed) ?? defaultNetworkSettings.seed,
-    }
-  } catch {
-    return { ...defaultNetworkSettings }
+  const parsed = parseJson(localStorage.getItem(settingsStorageKey))
+  if (!isRecord(parsed)) return { ...defaultNetworkSettings }
+  return {
+    scenario: toScenario(parsed.scenario) ?? defaultNetworkSettings.scenario,
+    seed: toSeed(parsed.seed) ?? defaultNetworkSettings.seed,
   }
 }
 
 function persistSettings(settings: NetworkSettings): void {
-  if (typeof localStorage === 'undefined') return
-
-  try {
-    localStorage.setItem(settingsStorageKey, JSON.stringify(settings))
-  } catch {
-    return
-  }
+  localStorage.setItem(settingsStorageKey, JSON.stringify(settings))
 }
 
 function updateUrl(settings: NetworkSettings | null): void {
-  if (typeof window === 'undefined') return
   const url = new URL(window.location.href)
   if (settings) {
     url.searchParams.set('scenario', settings.scenario)
@@ -160,8 +143,4 @@ function toSeed(value: unknown): number | null {
   const seed = typeof value === 'number' ? value : Number(value)
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 2147483647) return null
   return seed
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }

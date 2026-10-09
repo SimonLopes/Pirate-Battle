@@ -1,3 +1,4 @@
+import { isRecord, parseJson } from '../validate.ts'
 import {
   defaultConfig,
   sessionDurationLimits,
@@ -25,18 +26,12 @@ export function loadOptions(): PlayerOptions {
     spawnInterval: defaultConfig.spawnInterval,
     fullscreenOnMobile: true,
   }
-  try {
-    const raw = localStorage.getItem(storageKey)
-    if (!raw) return fallback
-    const parsed: unknown = JSON.parse(raw)
-    if (!isStoredOptions(parsed)) return fallback
-    return {
-      sessionDuration: parsed.sessionDuration,
-      spawnInterval: parsed.spawnInterval,
-      fullscreenOnMobile: parsed.fullscreenOnMobile ?? true,
-    }
-  } catch {
-    return fallback
+  const parsed = parseJson(localStorage.getItem(storageKey))
+  if (!isStoredOptions(parsed)) return fallback
+  return {
+    sessionDuration: parsed.sessionDuration,
+    spawnInterval: parsed.spawnInterval,
+    fullscreenOnMobile: parsed.fullscreenOnMobile ?? true,
   }
 }
 
@@ -105,10 +100,6 @@ function isStoredOptions(value: unknown): value is StoredOptions {
   if (!fits(value.spawnInterval, spawnIntervalLimits)) return false
   const flag = value.fullscreenOnMobile
   return flag === undefined || typeof flag === 'boolean'
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function fits(

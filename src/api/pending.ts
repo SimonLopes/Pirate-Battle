@@ -1,4 +1,5 @@
 import { loadPlayerId, playerName } from './player.ts'
+import { isMatchRecord, parseJson } from '../validate.ts'
 import type { EndReason, MatchRecord } from './types.ts'
 
 const storageKey = 'pirate-battle.pending'
@@ -68,6 +69,11 @@ export function flushPending(mutate: (record: MatchRecord) => void): void {
   for (const record of readPending()) sendPending(record, mutate)
 }
 
+export function clearPending(): void {
+  queue = []
+  localStorage.removeItem(storageKey)
+}
+
 function readPending(): MatchRecord[] {
   if (queue === null) queue = readStored()
   return queue
@@ -75,56 +81,11 @@ function readPending(): MatchRecord[] {
 
 function commit(next: MatchRecord[]): void {
   queue = next
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(next))
-  } catch {
-    return
-  }
+  localStorage.setItem(storageKey, JSON.stringify(next))
 }
 
 function readStored(): MatchRecord[] {
-  try {
-    const raw = localStorage.getItem(storageKey)
-    if (!raw) return []
-    const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(isPendingRecord)
-  } catch {
-    return []
-  }
-}
-
-function isPendingRecord(value: unknown): value is MatchRecord {
-  if (!isRecord(value) || !isRecord(value.config)) return false
-  return (
-    isId(value.matchId) &&
-    isId(value.playerId) &&
-    typeof value.playerName === 'string' &&
-    isDateString(value.playedAt) &&
-    isScore(value.score) &&
-    isDuration(value.durationMs) &&
-    (value.endReason === 'time' || value.endReason === 'death') &&
-    isDuration(value.config.sessionTime) &&
-    isDuration(value.config.spawnInterval)
-  )
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function isId(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0
-}
-
-function isScore(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0
-}
-
-function isDuration(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
-}
-
-function isDateString(value: unknown): value is string {
-  return typeof value === 'string' && Number.isFinite(Date.parse(value))
+  const parsed = parseJson(localStorage.getItem(storageKey))
+  if (!Array.isArray(parsed)) return []
+  return parsed.filter(isMatchRecord)
 }

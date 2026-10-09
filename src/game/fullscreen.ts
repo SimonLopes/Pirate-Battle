@@ -8,7 +8,11 @@ type VendorDocument = Document & {
   webkitExitFullscreen: () => Promise<void> | void
 }
 
+const listeners = new Set<() => void>()
+let isRejected = false
+
 export function canFullscreen(): boolean {
+  if (isRejected) return false
   const root = appRoot()
   if (!root) return false
   if (typeof root.requestFullscreen === 'function') {
@@ -22,24 +26,16 @@ export function isFullscreen(): boolean {
 }
 
 export function enterFullscreen(): void {
-  if (isFullscreen()) return
+  if (isFullscreen() || !canFullscreen()) return
   const root = appRoot()
   if (!root) return
   if (typeof root.requestFullscreen === 'function') {
-    if (!document.fullscreenEnabled) return
-    try {
-      void root.requestFullscreen().catch(() => undefined)
-    } catch {
-      return
-    }
+    void root.requestFullscreen().catch(reject)
     return
   }
   if (!hasWebkitRequest(root)) return
-  try {
-    settle(root.webkitRequestFullscreen())
-  } catch {
-    return
-  }
+  const result = root.webkitRequestFullscreen()
+  if (result instanceof Promise) void result.catch(reject)
 }
 
 export function enterFullscreenOnTouch(enabled: boolean): void {
@@ -54,10 +50,12 @@ export function toggleFullscreen(): void {
 }
 
 export function listenFullscreen(onChange: () => void): () => void {
+  listeners.add(onChange)
   for (const name of fullscreenEvents) {
     document.addEventListener(name, onChange)
   }
   return () => {
+    listeners.delete(onChange)
     for (const name of fullscreenEvents) {
       document.removeEventListener(name, onChange)
     }
@@ -66,19 +64,15 @@ export function listenFullscreen(onChange: () => void): () => void {
 
 function exitFullscreen(): void {
   if (document.fullscreenElement) {
-    try {
-      void document.exitFullscreen().catch(() => undefined)
-    } catch {
-      return
-    }
+    void document.exitFullscreen()
     return
   }
-  if (!hasWebkitExit(document)) return
-  try {
-    settle(document.webkitExitFullscreen())
-  } catch {
-    return
-  }
+  if (hasWebkitExit(document)) void document.webkitExitFullscreen()
+}
+
+function reject(): void {
+  isRejected = true
+  for (const listener of listeners) listener()
 }
 
 function appRoot(): HTMLElement | null {
@@ -100,8 +94,4 @@ function hasWebkitRequest(element: HTMLElement): element is VendorElement {
 function hasWebkitExit(doc: Document): doc is VendorDocument {
   if (!('webkitExitFullscreen' in doc)) return false
   return typeof doc.webkitExitFullscreen === 'function'
-}
-
-function settle(result: Promise<void> | void): void {
-  if (result instanceof Promise) void result.catch(() => undefined)
 }

@@ -12,26 +12,14 @@ export function loadPlayerId(): string {
     return stored
   }
   current = crypto.randomUUID()
-  writeStored(current)
+  localStorage.setItem(storageKey, current)
   return current
 }
 
 function readStored(): string | null {
-  try {
-    const raw = localStorage.getItem(storageKey)
-    if (!raw || !isPlayerId(raw)) return null
-    return raw
-  } catch {
-    return null
-  }
-}
-
-function writeStored(id: string): void {
-  try {
-    localStorage.setItem(storageKey, id)
-  } catch {
-    return
-  }
+  const raw = localStorage.getItem(storageKey)
+  if (!raw || !isPlayerId(raw)) return null
+  return raw
 }
 
 function isPlayerId(value: string): boolean {

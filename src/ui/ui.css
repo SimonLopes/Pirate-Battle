@@ -369,6 +369,21 @@ body {
   color: #e07a72;
 }
 
+.api-notice {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 10;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #5a1f1a;
+  color: #ffd0c4;
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateX(-50%);
+}
+
 .network-debug {
   margin: 14px auto 0;
   color: #d7c7a2;

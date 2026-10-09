@@ -6,11 +6,8 @@ import {
   scenarioLatency,
   type NetworkSettings,
 } from './scenarios.ts'
-import {
-  isMatchRecord,
-  readStoredMatches,
-  writeStoredMatches,
-} from './store.ts'
+import { isMatchRecord } from '../validate.ts'
+import { readStoredMatches, writeStoredMatches } from './store.ts'
 
 export { matchesStorageKey } from './store.ts'
 

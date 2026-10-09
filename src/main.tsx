@@ -7,19 +7,26 @@ import { worker } from './mocks/browser.ts'
 const queryClient = new QueryClient()
 
 async function start(): Promise<void> {
-  await worker
-    .start({
+  let isApiReady = true
+  try {
+    await worker.start({
       onUnhandledFrame: 'bypass',
-      //quiet: true,
       serviceWorker: {
         url: `${import.meta.env.BASE_URL}mockServiceWorker.js`,
       },
     })
-    .catch(() => undefined)
+  } catch {
+    isApiReady = false
+  }
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
+        {!isApiReady && (
+          <p className="api-notice" role="alert">
+            Offline API unavailable
+          </p>
+        )}
         <App />
       </QueryClientProvider>
     </StrictMode>,

@@ -8,7 +8,12 @@ import {
 
 export function FullscreenButton({ className = '' }: { className?: string }) {
   const active = useFullscreen()
-  if (!canFullscreen()) return null
+  const isAvailable = useSyncExternalStore(
+    listenFullscreen,
+    canFullscreen,
+    () => false,
+  )
+  if (!isAvailable) return null
   const label = active ? 'Exit fullscreen' : 'Enter fullscreen'
   return (
     <button

@@ -1,4 +1,6 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { clearPending } from '../api/pending.ts'
 import {
   getNetworkSettings,
   networkScenarios,
@@ -11,6 +13,7 @@ import { resetStoredMatches } from '../mocks/store.ts'
 import { Button } from '../ui/Button.tsx'
 
 export function NetworkPanel() {
+  const queryClient = useQueryClient()
   const initial = getNetworkSettings()
   const [settings, setSettings] = useState(initial)
   const [seed, setSeed] = useState(String(initial.seed))
@@ -36,10 +39,13 @@ export function NetworkPanel() {
 
   const reset = () => {
     resetStoredMatches()
+    clearPending()
     const next = resetNetworkSettings()
     setSettings(next)
     setSeed(String(next.seed))
-    setStatus('Fixtures restored and stored matches cleared.')
+    void queryClient.invalidateQueries({ queryKey: ['ranking'] })
+    void queryClient.invalidateQueries({ queryKey: ['history'] })
+    setStatus('Fixtures restored, stored and pending matches cleared.')
   }
 
   return (
