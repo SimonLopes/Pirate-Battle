@@ -1,4 +1,11 @@
-import { Container, Rectangle, Sprite, Texture, TilingSprite } from 'pixi.js'
+import {
+  Container,
+  Graphics,
+  Rectangle,
+  Sprite,
+  Texture,
+  TilingSprite,
+} from 'pixi.js'
 import type { Ball } from '../core/ball.ts'
 import type { Enemy } from '../core/enemy.ts'
 import type { Ship } from '../core/ship.ts'
@@ -34,6 +41,38 @@ type ShipMark = {
   style: BarStyle
 }
 
+type Foam = {
+  view: Graphics
+  life: number
+}
+
+type Trail = {
+  x: number
+  y: number
+  phase: number
+  along: number
+  head: Foam | null
+  push: number
+}
+
+type Sea = {
+  time: number
+  step: number
+  trails: Map<Ship, Trail>
+  live: Set<Ship>
+  nextPhase: number
+  foams: Foam[]
+  wakes: Container
+}
+
+type Ride = {
+  bob: number
+  tilt: number
+  moving: boolean
+  dx: number
+  dy: number
+}
+
 const playerHull = 1
 const chaserHull = 2
 const shooterHull = 3
@@ -51,6 +90,19 @@ const flameSizes = [
   { w: 14, h: 30 },
   { w: 10, h: 22 },
 ]
+const waterDriftX = 12
+const waterDriftY = 7
+const bobAmp = 2
+const bobTilt = 0.035
+const bobRate = 1.7
+const bobCycle = (Math.PI * 2) / bobRate
+const moved = 0.75
+const idleHold = 0.12
+const wakeGap = 18
+const wakeStern = 46
+const wakeLife = 0.55
+const frameCap = 0.05
+const phaseStep = 2.4
 
 export function createRenderer(
   stage: Container,
@@ -58,16 +110,33 @@ export function createRenderer(
 ): Renderer {
   const root = new Container()
   const arenaLayer = new Container()
+  const wakeLayer = new Container()
   const shipsLayer = new Container()
   const ballLayer = new Container()
   const effectLayer = new Container()
   const barLayer = new Container()
-  root.addChild(arenaLayer, shipsLayer, ballLayer, effectLayer, barLayer)
+  root.addChild(
+    arenaLayer,
+    wakeLayer,
+    shipsLayer,
+    ballLayer,
+    effectLayer,
+    barLayer,
+  )
   stage.addChild(root)
 
   const frames = new Map<number, Texture>()
   const enemyMarks: ShipMark[] = []
   const ballSprites: Sprite[] = []
+  const sea: Sea = {
+    time: 0,
+    step: 0,
+    trails: new Map(),
+    live: new Set(),
+    nextPhase: 0,
+    foams: [],
+    wakes: wakeLayer,
+  }
   let destroyed = false
   let ready = false
   let assets: GameAssets | null = null
@@ -75,6 +144,7 @@ export function createRenderer(
   let playerMark: ShipMark | null = null
   let enemyBars: BarStyle | null = null
   let fx: Effects | null = null
+  let water: TilingSprite | null = null
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -92,7 +162,7 @@ export function createRenderer(
       if (!ready) {
         if (!assets) return
         ready = true
-        paintArena(
+        water = paintArena(
           arenaLayer,
           assets.tiles,
           frames,
@@ -106,6 +176,11 @@ export function createRenderer(
         fx.prime(world)
       }
       if (!assets || !playerMark || !ballTexture || !enemyBars || !fx) return
+      sea.step = dt > 0 ? Math.min(dt, frameCap) : 0
+      sea.time = wrap(sea.time + sea.step, bobCycle)
+      sea.live.clear()
+      if (water) driftWater(water, sea.step)
+      tickFoams(sea.foams, sea.step)
       fx.sync(world, dt)
       placeMark(
         playerMark,
@@ -115,6 +190,7 @@ export function createRenderer(
         assets.ships,
         assets.effects,
         fx,
+        sea,
       )
       placeEnemies(
         shipsLayer,
@@ -125,19 +201,26 @@ export function createRenderer(
         enemyMarks,
         world,
         fx,
+        sea,
       )
       placeBalls(ballLayer, ballTexture, ballSprites, world.balls)
+      dropTrails(sea)
     },
     destroy() {
       if (destroyed) return
       destroyed = true
       fx?.destroy()
+      for (const foam of sea.foams) foam.view.destroy()
+      sea.foams.length = 0
       const crops = enemyMarks.map((mark) => mark.crop)
       if (playerMark) crops.push(playerMark.crop)
       root.destroy({ children: true })
       for (const crop of crops) crop.destroy(false)
       for (const texture of frames.values()) texture.destroy(false)
       frames.clear()
+      sea.trails.clear()
+      sea.live.clear()
+      water = null
     },
   }
 }
@@ -148,17 +231,16 @@ function paintArena(
   frames: Map<number, Texture>,
   arena: { width: number; height: number },
   islands: readonly Island[],
-): void {
-  const water = tileTexture(sheet, frames, waterTile)
-  const scale = tileSize / water.frame.width
-  root.addChild(
-    new TilingSprite({
-      texture: water,
-      width: arena.width,
-      height: arena.height,
-      tileScale: { x: scale, y: scale },
-    }),
-  )
+): TilingSprite {
+  const tile = tileTexture(sheet, frames, waterTile)
+  const scale = tileSize / tile.frame.width
+  const water = new TilingSprite({
+    texture: tile,
+    width: arena.width,
+    height: arena.height,
+    tileScale: { x: scale, y: scale },
+  })
+  root.addChild(water)
 
   for (const island of islands) {
     const grid = new Container()
@@ -178,6 +260,7 @@ function paintArena(
     }
     root.addChild(grid)
   }
+  return water
 }
 
 function playerStyle(bars: Record<BarName, Texture>): BarStyle {
@@ -249,14 +332,17 @@ function placeMark(
   sheet: GameAssets['ships'],
   effects: GameAssets['effects'],
   fx: Effects,
+  sea: Sea,
 ): void {
   const ratio = maxHp > 0 ? Math.min(1, Math.max(0, ship.hp / maxHp)) : 0
+  const ride = rideOf(sea, ship)
   mark.hull.visible = true
   mark.bar.visible = true
   mark.hull.texture = hullTexture(sheet, hullBase, ratio)
   mark.hull.tint = fx.tint(ship)
-  mark.hull.position.set(ship.x, ship.y)
-  mark.hull.rotation = ship.heading - artBow
+  mark.hull.position.set(ship.x, ship.y + ride.bob)
+  mark.hull.rotation = ship.heading - artBow + ride.tilt
+  layWake(sea, ship, ride)
   placeFlames(mark, ratio > 0 && ratio <= wornAbove, fx.flameFrame(), effects)
   const texW = mark.style.frame.width
   const texH = mark.style.frame.height
@@ -369,6 +455,7 @@ function placeEnemies(
   marks: ShipMark[],
   world: World,
   fx: Effects,
+  sea: Sea,
 ): void {
   const enemies = world.enemies
   while (marks.length < enemies.length) {
@@ -390,6 +477,7 @@ function placeEnemies(
       sheet,
       effects,
       fx,
+      sea,
     )
   }
 }
@@ -427,6 +515,134 @@ function placeBalls(
     sprite.visible = true
     sprite.position.set(ball.x, ball.y)
   }
+}
+
+function driftWater(water: TilingSprite, step: number): void {
+  water.tilePosition.x = wrap(
+    water.tilePosition.x + waterDriftX * step,
+    tileSize,
+  )
+  water.tilePosition.y = wrap(
+    water.tilePosition.y + waterDriftY * step,
+    tileSize,
+  )
+}
+
+function rideOf(sea: Sea, ship: Ship): Ride {
+  sea.live.add(ship)
+  const prev = sea.trails.get(ship)
+  if (!prev) {
+    const phase = sea.nextPhase
+    sea.nextPhase += phaseStep
+    sea.trails.set(ship, {
+      x: ship.x,
+      y: ship.y,
+      phase,
+      along: 0,
+      head: null,
+      push: idleHold,
+    })
+    return bobRide(sea.time, phase)
+  }
+  const dx = ship.x - prev.x
+  const dy = ship.y - prev.y
+  const travel = Math.hypot(dx, dy)
+  if (travel > moved) {
+    prev.x = ship.x
+    prev.y = ship.y
+    prev.push = 0
+    return { bob: 0, tilt: 0, moving: true, dx, dy }
+  }
+  prev.push += sea.step
+  if (prev.push < idleHold) {
+    return { bob: 0, tilt: 0, moving: true, dx: 0, dy: 0 }
+  }
+  return bobRide(sea.time, prev.phase)
+}
+
+function bobRide(time: number, phase: number): Ride {
+  const wave = Math.sin(time * bobRate + phase)
+  return {
+    bob: wave * bobAmp,
+    tilt: wave * bobTilt,
+    moving: false,
+    dx: 0,
+    dy: 0,
+  }
+}
+
+function layWake(sea: Sea, ship: Ship, ride: Ride): void {
+  const trail = sea.trails.get(ship)
+  if (!trail) return
+  if (!ride.moving) {
+    trail.head = null
+    trail.along = 0
+    return
+  }
+  let head = trail.head
+  if (!head || head.life <= 0) {
+    head = borrowFoam(sea)
+    trail.head = head
+  }
+  head.life = wakeLife
+  head.view.visible = true
+  head.view.alpha = 1
+  head.view.scale.set(1)
+  const cos = Math.cos(ship.heading)
+  const sin = Math.sin(ship.heading)
+  head.view.position.set(ship.x - cos * wakeStern, ship.y - sin * wakeStern)
+  head.view.rotation = ship.heading - artBow
+  trail.along += Math.hypot(ride.dx, ride.dy)
+  if (trail.along < wakeGap) return
+  trail.along = 0
+  trail.head = null
+}
+
+function borrowFoam(sea: Sea): Foam {
+  for (const foam of sea.foams) {
+    if (foam.life <= 0) return foam
+  }
+  const view = makeWake()
+  sea.wakes.addChild(view)
+  const foam = { view, life: 0 }
+  sea.foams.push(foam)
+  return foam
+}
+
+function tickFoams(foams: Foam[], step: number): void {
+  for (const foam of foams) {
+    if (foam.life <= 0) continue
+    foam.life -= step
+    if (foam.life <= 0) {
+      foam.view.visible = false
+      continue
+    }
+    const left = foam.life / wakeLife
+    foam.view.alpha = 0.2 + 0.8 * left
+    foam.view.scale.set(1.08 - 0.08 * left, 1.16 - 0.16 * left)
+  }
+}
+
+function makeWake(): Graphics {
+  const wake = new Graphics()
+  wake.ellipse(0, 6, 3, 18).fill({ color: 0xffffff, alpha: 0.7 })
+  wake.ellipse(-4, -8, 5, 14).fill({ color: 0xe7f5ff, alpha: 0.45 })
+  wake.ellipse(4, -8, 5, 14).fill({ color: 0xe7f5ff, alpha: 0.45 })
+  wake.ellipse(-9, -22, 4, 8).fill({ color: 0xf4fbff, alpha: 0.28 })
+  wake.ellipse(9, -22, 4, 8).fill({ color: 0xf4fbff, alpha: 0.28 })
+  wake.visible = false
+  return wake
+}
+
+function dropTrails(sea: Sea): void {
+  for (const ship of sea.trails.keys()) {
+    if (!sea.live.has(ship)) sea.trails.delete(ship)
+  }
+}
+
+function wrap(value: number, span: number): number {
+  const mod = value % span
+  return mod < 0 ? mod + span : mod
 }
 
 function tileTexture(
