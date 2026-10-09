@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Application } from 'pixi.js'
-import { defaultConfig } from '../config.ts'
+import type { GameConfig } from '../config.ts'
 import { GameSession } from '../GameSession.ts'
 import { Hud } from '../hud/Hud.tsx'
 import { createHudStore } from '../hud/store.ts'
+import type { MatchResult } from '../result.ts'
 import { TouchControls } from '../input/TouchControls.tsx'
 import { useTouchLayout } from '../input/useTouchLayout.ts'
 import { stageFit, zeroInsets, type Insets } from '../input/touch.ts'
@@ -24,18 +25,27 @@ function fitStage(
   app.stage.position.set(fit.x, fit.y)
 }
 
-export function GameCanvas() {
+export function GameCanvas({
+  config,
+  onMenu,
+  onEnd,
+}: {
+  config: GameConfig
+  onMenu: () => void
+  onEnd: (result: MatchResult) => void
+}) {
+  const [snapshot] = useState(config)
   const hostRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
   const sessionRef = useRef<GameSession | null>(null)
   const appRef = useRef<Application | null>(null)
   const insetsRef = useRef(zeroInsets)
-  const layout = useTouchLayout(hostRef, barRef, defaultConfig.arena)
+  const layout = useTouchLayout(hostRef, barRef, snapshot.arena)
   const [store] = useState(() =>
     createHudStore({
       score: 0,
-      hp: defaultConfig.ships.player.hp,
-      secondsLeft: defaultConfig.sessionDuration,
+      hp: snapshot.ships.player.hp,
+      secondsLeft: snapshot.sessionDuration,
       status: 'running',
     }),
   )
@@ -48,7 +58,7 @@ export function GameCanvas() {
     let alive = true
     let session: GameSession | null = null
     let onResize: (() => void) | null = null
-    const { width, height } = defaultConfig.arena
+    const { width, height } = snapshot.arena
     const fit = () => {
       const host = hostRef.current
       if (!host) return
@@ -93,7 +103,7 @@ export function GameCanvas() {
           }
 
           appRef.current = app
-          const match = new GameSession(app, defaultConfig, store, adopt)
+          const match = new GameSession(app, snapshot, store, adopt)
           adopt(match)
           onResize = fit
           app.renderer.on('resize', onResize)
@@ -113,7 +123,24 @@ export function GameCanvas() {
       sessionRef.current = null
       release()
     }
-  }, [store])
+  }, [snapshot, store])
+
+  useEffect(() => {
+    let reported = false
+    const report = () => {
+      if (reported) return
+      if (store.getView().status !== 'ended') return
+      const world = sessionRef.current?.world
+      if (!world || !world.endReason) return
+      reported = true
+      onEnd({
+        score: world.score,
+        played: world.time,
+        reason: world.endReason,
+      })
+    }
+    return store.subscribe(report)
+  }, [onEnd, store])
 
   useLayoutEffect(() => {
     const inset = layout?.insets ?? zeroInsets
@@ -121,9 +148,9 @@ export function GameCanvas() {
     const app = appRef.current
     const host = hostRef.current
     if (!app || !host) return
-    const { width, height } = defaultConfig.arena
+    const { width, height } = snapshot.arena
     fitStage(app, host.clientWidth, host.clientHeight, width, height, inset)
-  }, [layout])
+  }, [layout, snapshot])
 
   return (
     <div
@@ -144,6 +171,7 @@ export function GameCanvas() {
         onResume={() => {
           sessionRef.current?.resume()
         }}
+        onMenu={onMenu}
       />
     </div>
   )

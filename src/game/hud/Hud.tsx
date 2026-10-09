@@ -6,6 +6,8 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
+import { Button } from '../../ui/Button.tsx'
+import { Panel } from '../../ui/Panel.tsx'
 import type { HudStore } from './store.ts'
 
 const hudArt = '/assets/png/default/ui/hud'
@@ -96,70 +98,22 @@ const hidden: CSSProperties = {
   border: 0,
 }
 
-const shade: CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: 1,
-  background: 'rgba(2, 16, 24, 0.55)',
-}
-
-const panel: CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  zIndex: 3,
-  width: 'min(420px, calc(100% - 32px))',
-  margin: 0,
-  padding: '28px 32px',
-  transform: 'translate(-50%, -50%)',
-  background: 'rgba(2, 16, 24, 0.94)',
-  color: '#fff6df',
-  border: '2px solid #e6c15a',
-  borderRadius: 12,
-  textAlign: 'center',
-  maxHeight: 'calc(100% - 32px)',
-  overflow: 'auto',
-  font: '600 18px/1.4 system-ui, sans-serif',
-}
-
-const title: CSSProperties = {
-  margin: 0,
-  font: '700 32px/1.2 system-ui, sans-serif',
-}
-
-const hint: CSSProperties = {
-  margin: '12px 0 0',
-}
-
-const resumeButton: CSSProperties = {
-  marginTop: 20,
-  minWidth: 160,
-  minHeight: 48,
-  padding: '12px 24px',
-  color: '#021018',
-  background: '#fff6df',
-  border: '2px solid #e6c15a',
-  borderRadius: 8,
-  font: '700 18px/1 system-ui, sans-serif',
-  cursor: 'pointer',
-  outline: '3px solid #e6c15a',
-  outlineOffset: 3,
-}
-
 export function Hud({
   store,
   onResume,
+  onMenu,
   barRef,
 }: {
   store: HudStore
   onResume: () => void
+  onMenu: () => void
   barRef: Ref<HTMLDivElement>
 }) {
   return (
     <>
       <HudScore store={store} barRef={barRef} />
       <HudNotice store={store} />
-      <PauseDialog store={store} onResume={onResume} />
+      <PauseDialog store={store} onResume={onResume} onMenu={onMenu} />
     </>
   )
 }
@@ -228,9 +182,11 @@ function HudNotice({ store }: { store: HudStore }) {
 function PauseDialog({
   store,
   onResume,
+  onMenu,
 }: {
   store: HudStore
   onResume: () => void
+  onMenu: () => void
 }) {
   const view = useSyncExternalStore(
     store.subscribe,
@@ -238,15 +194,29 @@ function PauseDialog({
     store.getView,
   )
   const open = view.status === 'paused'
-  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    buttonRef.current?.focus()
+    const root = dialogRef.current
+    if (!root) return
+    const buttons = () => [
+      ...root.querySelectorAll<HTMLButtonElement>('button'),
+    ]
+    buttons()[0]?.focus()
     const trap = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return
+      const list = buttons()
+      const first = list[0]
+      const last = list[list.length - 1]
+      if (!first || !last) return
       event.preventDefault()
-      buttonRef.current?.focus()
+      const current = document.activeElement
+      if (event.shiftKey) {
+        if (current === first) last.focus()
+        else first.focus()
+      } else if (current === last) first.focus()
+      else last.focus()
     }
     document.addEventListener('keydown', trap)
     return () => document.removeEventListener('keydown', trap)
@@ -255,31 +225,32 @@ function PauseDialog({
   if (!open) return null
 
   return (
-    <>
-      <div style={shade} aria-hidden="true" />
+    <div className="pause-layer">
+      <div className="pause-shade" aria-hidden="true" />
       <div
+        ref={dialogRef}
+        className="pause-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="pause-title"
         aria-describedby="pause-hint"
-        style={panel}
       >
-        <h2 id="pause-title" style={title}>
-          Paused
-        </h2>
-        <p id="pause-hint" style={hint}>
-          Press a key or resume to continue.
-        </p>
-        <button
-          ref={buttonRef}
-          type="button"
-          style={resumeButton}
-          onClick={onResume}
-        >
-          Resume
-        </button>
+        <Panel>
+          <h2 id="pause-title" className="menu-heading">
+            Pausado
+          </h2>
+          <p id="pause-hint" className="menu-copy">
+            Retome quando quiser.
+          </p>
+          <div className="menu-stack">
+            <Button onClick={onResume}>Continuar</Button>
+            <Button variant="secondary" onClick={onMenu}>
+              Menu principal
+            </Button>
+          </div>
+        </Panel>
       </div>
-    </>
+    </div>
   )
 }
 
