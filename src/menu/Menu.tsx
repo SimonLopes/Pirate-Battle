@@ -4,6 +4,7 @@ import { Button } from '../ui/Button.tsx'
 import { Controls } from '../ui/Controls.tsx'
 import { Panel } from '../ui/Panel.tsx'
 import { useDialog } from '../ui/useDialog.ts'
+import { NetworkPanel } from './NetworkPanel.tsx'
 import { Options } from './Options.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
@@ -103,6 +104,7 @@ function Home({
             Como jogar
           </Button>
         </div>
+        <NetworkPanel />
       </Panel>
       <HowToPlay open={help} onClose={() => setHelp(false)} />
     </>

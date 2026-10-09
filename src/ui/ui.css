@@ -197,6 +197,69 @@ body {
   margin-top: 4px;
 }
 
+.network-debug {
+  margin: 14px auto 0;
+  color: #d7c7a2;
+  font-size: 12px;
+}
+
+.network-debug summary {
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.network-debug summary:focus-visible,
+.network-debug select:focus-visible,
+.network-debug input:focus-visible {
+  outline: 3px solid #ffe7a3;
+  outline-offset: 3px;
+}
+
+.network-fields {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 10px;
+  width: min(300px, 100%);
+  margin: 12px auto 0;
+  text-align: left;
+}
+
+.network-fields select,
+.network-fields input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid rgba(244, 231, 200, 0.45);
+  border-radius: 4px;
+  background: #0a354d;
+  color: #f4e7c8;
+  font: inherit;
+}
+
+.network-fields select {
+  padding: 0 6px;
+}
+
+.network-fields input {
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.network-fields .menu-button {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.network-status {
+  grid-column: 1 / -1;
+  min-height: 1.2em;
+  color: #d7c7a2;
+  text-align: center;
+}
+
 .menu-button {
   box-sizing: border-box;
   width: 240px;
@@ -546,7 +609,7 @@ body {
   background: rgba(6, 24, 40, 0.88);
   transform: translateX(-50%);
   pointer-events: none;
-  opacity: .8;
+  opacity: 0.8;
   transition: opacity 0.45s ease;
 }
 
