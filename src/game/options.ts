@@ -1,3 +1,4 @@
+import { readStorage, writeStorage } from '../storage.ts'
 import { isRecord, parseJson } from '../validate.ts'
 import {
   defaultConfig,
@@ -26,7 +27,7 @@ export function loadOptions(): PlayerOptions {
     spawnInterval: defaultConfig.spawnInterval,
     fullscreenOnMobile: true,
   }
-  const parsed = parseJson(localStorage.getItem(storageKey))
+  const parsed = parseJson(readStorage(storageKey))
   if (!isStoredOptions(parsed)) return fallback
   return {
     sessionDuration: parsed.sessionDuration,
@@ -36,12 +37,7 @@ export function loadOptions(): PlayerOptions {
 }
 
 export function saveOptions(options: PlayerOptions): boolean {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(options))
-    return true
-  } catch {
-    return false
-  }
+  return writeStorage(storageKey, JSON.stringify(options))
 }
 
 export function configFromOptions(options: PlayerOptions): GameConfig {

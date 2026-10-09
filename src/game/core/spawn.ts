@@ -53,11 +53,10 @@ export function pickSpawn(
   hullOffset: number,
 ): SpawnPoint | null {
   const { arena, spawnArea } = world.config
-  const edge = spawnArea.edgeMargin
   for (let tries = 0; tries < spawnArea.attempts; tries += 1) {
     const spot = {
-      x: world.rng.range(edge, arena.width - edge),
-      y: world.rng.range(edge, arena.height - edge),
+      x: world.rng.range(0, arena.width),
+      y: world.rng.range(0, arena.height),
     }
     if (isOpen(world, spot, radius, hullOffset)) return spot
   }

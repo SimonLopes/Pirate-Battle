@@ -625,6 +625,14 @@ body {
   border: 0;
 }
 
+.option-notice {
+  margin: 12px auto 0;
+  max-width: 280px;
+  color: #ffd0c4;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .option-error {
   margin: 0;
   max-width: 280px;

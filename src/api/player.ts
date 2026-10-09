@@ -1,3 +1,5 @@
+import { readStorage, writeStorage } from '../storage.ts'
+
 const storageKey = 'pirate-battle.player'
 
 export const playerName = 'Captain'
@@ -12,12 +14,12 @@ export function loadPlayerId(): string {
     return stored
   }
   current = crypto.randomUUID()
-  localStorage.setItem(storageKey, current)
+  writeStorage(storageKey, current)
   return current
 }
 
 function readStored(): string | null {
-  const raw = localStorage.getItem(storageKey)
+  const raw = readStorage(storageKey)
   if (!raw || !isPlayerId(raw)) return null
   return raw
 }

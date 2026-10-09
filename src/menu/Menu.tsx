@@ -19,14 +19,16 @@ type LogTab = 'ranking' | 'history'
 
 export function Menu({
   options,
+  isOptionsUnsaved,
   last,
   onPlay,
   onSave,
 }: {
   options: PlayerOptions
+  isOptionsUnsaved: boolean
   last: MatchResult | null
   onPlay: () => void
-  onSave: (options: PlayerOptions) => boolean
+  onSave: (options: PlayerOptions) => void
 }) {
   const [view, setView] = useState<'home' | 'options' | LogTab>('home')
   const pendingFocus = useRef<string | null>(null)
@@ -47,6 +49,7 @@ export function Menu({
     <main className="menu-scene">
       {view === 'home' && (
         <Home
+          isOptionsUnsaved={isOptionsUnsaved}
           last={last}
           onPlay={onPlay}
           onOptions={() => show('options', 'session-time')}
@@ -76,11 +79,13 @@ export function Menu({
 }
 
 function Home({
+  isOptionsUnsaved,
   last,
   onPlay,
   onOptions,
   onTab,
 }: {
+  isOptionsUnsaved: boolean
   last: MatchResult | null
   onPlay: () => void
   onOptions: () => void
@@ -103,6 +108,11 @@ function Home({
             Options
           </Button>
         </div>
+        {isOptionsUnsaved && (
+          <p className="option-notice" role="status">
+            Options will reset when you reload.
+          </p>
+        )}
         <img className="menu-mark" src={shipArt} alt="" draggable={false} />
         <p className="menu-tagline">
           Navigate the islands. Survive the battle.

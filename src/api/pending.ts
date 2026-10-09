@@ -1,4 +1,5 @@
 import { loadPlayerId, playerName } from './player.ts'
+import { readStorage, removeStorage, writeStorage } from '../storage.ts'
 import { isMatchRecord, parseJson } from '../validate.ts'
 import type { EndReason, MatchRecord } from './types.ts'
 
@@ -71,7 +72,7 @@ export function flushPending(mutate: (record: MatchRecord) => void): void {
 
 export function clearPending(): void {
   queue = []
-  localStorage.removeItem(storageKey)
+  removeStorage(storageKey)
 }
 
 function readPending(): MatchRecord[] {
@@ -81,11 +82,11 @@ function readPending(): MatchRecord[] {
 
 function commit(next: MatchRecord[]): void {
   queue = next
-  localStorage.setItem(storageKey, JSON.stringify(next))
+  writeStorage(storageKey, JSON.stringify(next))
 }
 
 function readStored(): MatchRecord[] {
-  const parsed = parseJson(localStorage.getItem(storageKey))
+  const parsed = parseJson(readStorage(storageKey))
   if (!Array.isArray(parsed)) return []
   return parsed.filter(isMatchRecord)
 }

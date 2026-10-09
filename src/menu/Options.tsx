@@ -27,7 +27,7 @@ export function Options({
   onBack,
 }: {
   saved: PlayerOptions
-  onSave: (options: PlayerOptions) => boolean
+  onSave: (options: PlayerOptions) => void
   onBack: () => void
 }) {
   const sessionRef = useRef<HTMLInputElement>(null)
@@ -39,7 +39,6 @@ export function Options({
   )
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [spawnError, setSpawnError] = useState<string | null>(null)
-  const [saveError, setSaveError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -54,7 +53,6 @@ export function Options({
     const nextSpawnError = spawnTimeError(spawnTime)
     setSessionError(nextSessionError)
     setSpawnError(nextSpawnError)
-    setSaveError(null)
     if (nextSessionError || nextSpawnError) {
       setAttempt((value) => value + 1)
       return
@@ -64,10 +62,7 @@ export function Options({
       spawnInterval: Number(spawnTime.trim()),
       fullscreenOnMobile,
     }
-    if (!onSave(next)) {
-      setSaveError('Could not save the options.')
-      return
-    }
+    onSave(next)
     onBack()
   }
 
@@ -86,7 +81,6 @@ export function Options({
           onChange={(value) => {
             setSessionTime(value)
             setSessionError(null)
-            setSaveError(null)
           }}
         />
         <TimeField
@@ -99,7 +93,6 @@ export function Options({
           onChange={(value) => {
             setSpawnTime(value)
             setSpawnError(null)
-            setSaveError(null)
           }}
         />
         <div className="option-field">
@@ -117,11 +110,6 @@ export function Options({
             <FullscreenButton />
           </div>
         </div>
-        {saveError && (
-          <p className="option-error" role="alert">
-            {saveError}
-          </p>
-        )}
         <Button type="submit">Main menu</Button>
       </form>
     </Panel>

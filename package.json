@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "spritesheet": "node scripts/spritesheet.mjs"
+    "spritesheet": "node scripts/spritesheet.mjs",
+    "test": "node --experimental-strip-types --test src/**/*.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

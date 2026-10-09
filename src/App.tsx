@@ -24,6 +24,7 @@ function App() {
   const [matchRecord, setMatchRecord] = useState<MatchRecord | null>(null)
   const [screen, setScreen] = useState<Screen>('menu')
   const [options, setOptions] = useState(loadOptions)
+  const [isOptionsUnsaved, setIsOptionsUnsaved] = useState(false)
   const [matchConfig, setMatchConfig] = useState(() =>
     configFromOptions(options),
   )
@@ -60,9 +61,8 @@ function App() {
   }
 
   const save = (next: PlayerOptions) => {
-    if (!saveOptions(next)) return false
     setOptions(next)
-    return true
+    setIsOptionsUnsaved(!saveOptions(next))
   }
 
   let view: ReactNode
@@ -85,7 +85,15 @@ function App() {
       />
     )
   } else {
-    view = <Menu options={options} last={result} onPlay={play} onSave={save} />
+    view = (
+      <Menu
+        options={options}
+        isOptionsUnsaved={isOptionsUnsaved}
+        last={result}
+        onPlay={play}
+        onSave={save}
+      />
+    )
   }
 
   return (

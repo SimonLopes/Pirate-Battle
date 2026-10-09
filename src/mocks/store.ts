@@ -1,18 +1,28 @@
 import type { MatchRecord } from '../api/types.ts'
+import { readStorage, removeStorage, writeStorage } from '../storage.ts'
 import { isMatchRecord, parseJson } from '../validate.ts'
 
 export const matchesStorageKey = 'pirate-battle.matches'
 
+let matches: MatchRecord[] | null = null
+
 export function readStoredMatches(): MatchRecord[] {
-  const parsed = parseJson(localStorage.getItem(matchesStorageKey))
-  if (!Array.isArray(parsed)) return []
-  return parsed.filter(isMatchRecord)
+  if (matches === null) matches = readStored()
+  return matches
 }
 
-export function writeStoredMatches(matches: MatchRecord[]): void {
-  localStorage.setItem(matchesStorageKey, JSON.stringify(matches))
+export function writeStoredMatches(next: MatchRecord[]): void {
+  matches = next
+  writeStorage(matchesStorageKey, JSON.stringify(next))
 }
 
 export function resetStoredMatches(): void {
-  localStorage.removeItem(matchesStorageKey)
+  matches = []
+  removeStorage(matchesStorageKey)
+}
+
+function readStored(): MatchRecord[] {
+  const parsed = parseJson(readStorage(matchesStorageKey))
+  if (!Array.isArray(parsed)) return []
+  return parsed.filter(isMatchRecord)
 }

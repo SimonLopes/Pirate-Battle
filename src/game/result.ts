@@ -1,3 +1,4 @@
+import { readStorage, writeStorage } from '../storage.ts'
 import {
   isEndReason,
   isNonNegativeInteger,
@@ -16,7 +17,7 @@ export type MatchResult = {
 }
 
 export function loadResult(): MatchResult | null {
-  const parsed = parseJson(localStorage.getItem(storageKey))
+  const parsed = parseJson(readStorage(storageKey))
   if (!isMatchResult(parsed)) return null
   return {
     score: parsed.score,
@@ -26,7 +27,7 @@ export function loadResult(): MatchResult | null {
 }
 
 export function saveResult(result: MatchResult): void {
-  localStorage.setItem(storageKey, JSON.stringify(result))
+  writeStorage(storageKey, JSON.stringify(result))
 }
 
 function isMatchResult(value: unknown): value is MatchResult {

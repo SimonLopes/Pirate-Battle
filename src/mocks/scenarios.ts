@@ -1,3 +1,4 @@
+import { readStorage, writeStorage } from '../storage.ts'
 import { isRecord, parseJson } from '../validate.ts'
 
 export const networkScenarios = [
@@ -95,7 +96,7 @@ function loadSettings(): NetworkSettings {
 }
 
 function readStoredSettings(): NetworkSettings {
-  const parsed = parseJson(localStorage.getItem(settingsStorageKey))
+  const parsed = parseJson(readStorage(settingsStorageKey))
   if (!isRecord(parsed)) return { ...defaultNetworkSettings }
   return {
     scenario: toScenario(parsed.scenario) ?? defaultNetworkSettings.scenario,
@@ -104,7 +105,7 @@ function readStoredSettings(): NetworkSettings {
 }
 
 function persistSettings(settings: NetworkSettings): void {
-  localStorage.setItem(settingsStorageKey, JSON.stringify(settings))
+  writeStorage(settingsStorageKey, JSON.stringify(settings))
 }
 
 function updateUrl(settings: NetworkSettings | null): void {
