@@ -6,7 +6,7 @@ import {
   saveOptions,
   type PlayerOptions,
 } from './game/options.ts'
-import { loadResult, saveResult, type MatchResult } from './game/result.ts'
+import { saveResult, type MatchResult } from './game/result.ts'
 import { GameCanvas } from './game/render/GameCanvas.tsx'
 import { Menu } from './menu/Menu.tsx'
 import { Result } from './menu/Result.tsx'
@@ -17,8 +17,8 @@ import './ui/ui.css'
 type Screen = 'menu' | 'game' | 'result'
 
 function App() {
-  const [result, setResult] = useState(loadResult)
-  const [screen, setScreen] = useState<Screen>(result ? 'result' : 'menu')
+  const [result, setResult] = useState<MatchResult | null>(null)
+  const [screen, setScreen] = useState<Screen>('menu')
   const [options, setOptions] = useState(loadOptions)
   const [matchConfig, setMatchConfig] = useState(() =>
     configFromOptions(options),

@@ -4,7 +4,7 @@ import { isGameKey } from '../input/keyboard.ts'
 import { useCoarsePointer } from '../input/useTouchLayout.ts'
 
 const holdMs = 4000
-const fadeMs = 450
+const fadeMs = 350
 
 export function ControlHint() {
   const coarse = useCoarsePointer()

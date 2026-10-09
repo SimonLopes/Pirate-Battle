@@ -81,6 +81,7 @@ export function Options({
           value={sessionTime}
           error={sessionError}
           limits={sessionDurationLimits}
+          step={5}
           inputRef={sessionRef}
           onChange={(value) => {
             setSessionTime(value)
@@ -103,7 +104,7 @@ export function Options({
         />
         <div className="option-field">
           <label className="option-label" htmlFor="fullscreen-mobile">
-            Fullscreen on mobile
+            Tela cheia no celular
           </label>
           <div className="option-row">
             <input
@@ -133,6 +134,7 @@ function TimeField({
   value,
   error,
   limits,
+  step = 1,
   inputRef,
   onChange,
 }: {
@@ -141,6 +143,7 @@ function TimeField({
   value: string
   error: string | null
   limits: { min: number; max: number }
+  step?: number
   inputRef: RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
 }) {
@@ -161,7 +164,7 @@ function TimeField({
           icon={minusArt}
           label={`Diminuir ${name}`}
           disabled={atMin}
-          onClick={() => onChange(stepSeconds(value, -1, limits))}
+          onClick={() => onChange(stepSeconds(value, -step, limits))}
         />
         <span className="option-value">
           <input
@@ -182,7 +185,7 @@ function TimeField({
           icon={plusArt}
           label={`Aumentar ${name}`}
           disabled={atMax}
-          onClick={() => onChange(stepSeconds(value, 1, limits))}
+          onClick={() => onChange(stepSeconds(value, step, limits))}
         />
       </div>
       {error && (

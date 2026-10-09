@@ -230,7 +230,7 @@ function PauseDialog({
           <p id="pause-hint" className="menu-copy">
             Retome quando quiser.
           </p>
-          <Controls />
+          
           <div className="menu-stack">
             <Button onClick={onResume}>Continuar</Button>
             <Button variant="secondary" onClick={onMenu}>

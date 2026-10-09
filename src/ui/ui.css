@@ -59,7 +59,7 @@ body {
 
 .menu-mark {
   display: block;
-  width: 56px;
+  width: 32px;
   height: auto;
   margin: 16px auto 8px;
 }
@@ -546,7 +546,7 @@ body {
   background: rgba(6, 24, 40, 0.88);
   transform: translateX(-50%);
   pointer-events: none;
-  opacity: 1;
+  opacity: .8;
   transition: opacity 0.45s ease;
 }
 
