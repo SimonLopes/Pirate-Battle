@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Application } from 'pixi.js'
 import type { GameConfig } from '../config.ts'
 import { GameSession } from '../GameSession.ts'
+import { loadAssets } from './assets.ts'
 import { Hud } from '../hud/Hud.tsx'
 import { createHudStore } from '../hud/store.ts'
 import type { MatchResult } from '../result.ts'
@@ -87,35 +88,36 @@ export function GameCanvas({
       app.destroy({ removeView: true }, { children: true })
     }
 
-    void app
-      .init({
+    void Promise.all([
+      app.init({
         resizeTo: host,
         resolution: window.devicePixelRatio,
         autoDensity: true,
         background,
         sharedTicker: false,
-      })
-      .then(
-        () => {
-          if (!alive) {
-            release()
-            return
-          }
-
-          appRef.current = app
-          const match = new GameSession(app, snapshot, store, adopt)
-          adopt(match)
-          onResize = fit
-          app.renderer.on('resize', onResize)
-          fit()
-          app.canvas.style.display = 'block'
-          host.appendChild(app.canvas)
-          match.start()
-        },
-        () => {
+      }),
+      loadAssets(() => undefined),
+    ]).then(
+      ([, assets]) => {
+        if (!alive) {
           release()
-        },
-      )
+          return
+        }
+
+        appRef.current = app
+        const match = new GameSession(app, snapshot, store, adopt, assets.arena)
+        adopt(match)
+        onResize = fit
+        app.renderer.on('resize', onResize)
+        fit()
+        app.canvas.style.display = 'block'
+        host.appendChild(app.canvas)
+        match.start()
+      },
+      () => {
+        release()
+      },
+    )
 
     return () => {
       alive = false

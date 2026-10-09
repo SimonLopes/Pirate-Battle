@@ -1,4 +1,5 @@
 import { Assets, type Spritesheet, type Texture } from 'pixi.js'
+import type { ArenaMap } from '../arena.ts'
 
 export type EffectName =
   'explosion_1' | 'explosion_2' | 'explosion_3' | 'fire_1' | 'fire_2'
@@ -20,6 +21,7 @@ export type GameAssets = {
   tiles: Texture
   effects: Record<EffectName, Texture>
   bars: Record<BarName, Texture>
+  arena: ArenaMap
 }
 
 const effectNames = [
@@ -72,7 +74,7 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
     : 'ships_miscellaneous_sheet.json'
   const tileSheet = retina ? 'tiles_sheet_retina.png' : 'tiles_sheet.png'
 
-  const loaded = await Assets.load<Spritesheet | Texture>(
+  const loaded = await Assets.load<Spritesheet | Texture | ArenaMap>(
     [
       { alias: 'ships', src: `/assets/spritesheet/${shipSheet}` },
       {
@@ -80,6 +82,7 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
         src: `/assets/tilesheet/${tileSheet}`,
         data: { resolution: retina ? 2 : 1 },
       },
+      { alias: 'arena', src: '/assets/maps/arena.json' },
       ...effectNames.map((name) => ({
         alias: name,
         src: `/assets/png/${folder}/effects/${name}.png`,
@@ -94,8 +97,9 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
 
   const ships = loaded.ships
   const tiles = loaded.tiles
-  if (!isSpritesheet(ships) || !isTexture(tiles)) {
-    throw new Error('ship atlas or tile sheet is missing')
+  const arena = loaded.arena
+  if (!isSpritesheet(ships) || !isTexture(tiles) || !isArena(arena)) {
+    throw new Error('ship atlas, tile sheet, or arena is missing')
   }
 
   const effects = {} as Record<EffectName, Texture>
@@ -112,16 +116,28 @@ async function fetchAssets(onProgress: Progress): Promise<GameAssets> {
     bars[name] = texture
   }
 
-  return { ships, tiles, effects, bars }
+  return { ships, tiles, effects, bars, arena }
 }
 
-function isSpritesheet(
-  asset: Spritesheet | Texture | undefined,
-): asset is Spritesheet {
+type Loaded = Spritesheet | Texture | ArenaMap | undefined
+
+function isArena(asset: Loaded): asset is ArenaMap {
+  if (!asset || !('shallow' in asset) || !('ground' in asset)) return false
+  const cells = asset.width * asset.height
+  return (
+    asset.shallow.length === cells &&
+    asset.ground.length === cells &&
+    Array.isArray(asset.decor) &&
+    Array.isArray(asset.colliders) &&
+    Array.isArray(asset.spawns?.enemies)
+  )
+}
+
+function isSpritesheet(asset: Loaded): asset is Spritesheet {
   return !!asset && 'textures' in asset
 }
 
-function isTexture(asset: Spritesheet | Texture | undefined): asset is Texture {
+function isTexture(asset: Loaded): asset is Texture {
   return !!asset && 'source' in asset && !('textures' in asset)
 }
 

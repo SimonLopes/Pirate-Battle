@@ -1,4 +1,5 @@
 import { UPDATE_PRIORITY, type Application } from 'pixi.js'
+import { arenaColliders, type ArenaMap } from './arena.ts'
 import type { GameConfig } from './config.ts'
 import { idleActions, type Actions } from './core/actions.ts'
 import { createRng } from './core/rng.ts'
@@ -16,7 +17,6 @@ import {
   type TouchBinding,
   type TouchBindings,
 } from './input/touch.ts'
-import { pickLayout } from './map.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 
 export class GameSession {
@@ -29,6 +29,7 @@ export class GameSession {
   private readonly hud: HudStore
   private readonly renderer: Renderer
   private readonly adopt: (session: GameSession) => void
+  private readonly arena: ArenaMap
   private keyboard: Keyboard | null = null
   private accumulator = 0
   private started = false
@@ -42,24 +43,27 @@ export class GameSession {
     config: GameConfig,
     hud: HudStore,
     adopt: (session: GameSession) => void,
+    arena: ArenaMap,
     seed = Date.now(),
   ) {
     const rng = createRng(seed)
-    const islands = pickLayout(rng)
     this.app = app
     this.hud = hud
     this.adopt = adopt
+    this.arena = arena
     this.config = structuredClone(config)
     this.world = createWorld(
       this.config,
-      islands.flatMap((island) => island.colliders),
+      arenaColliders(arena),
       rng,
+      arena.spawns.player,
+      arena.spawns.enemies,
     )
     this.actions = idleActions()
     this.touch = idleTouch()
     const debug =
       new URLSearchParams(window.location.search).get('debug') === '1'
-    this.renderer = createRenderer(app.stage, islands, debug)
+    this.renderer = createRenderer(app.stage, debug)
     document.addEventListener('visibilitychange', this.onHide)
     window.addEventListener('blur', this.onBlur)
   }
@@ -144,7 +148,13 @@ export class GameSession {
 
   restart(): void {
     if (this.destroyed) return
-    const next = new GameSession(this.app, this.config, this.hud, this.adopt)
+    const next = new GameSession(
+      this.app,
+      this.config,
+      this.hud,
+      this.adopt,
+      this.arena,
+    )
     this.destroy()
     this.adopt(next)
     next.start()

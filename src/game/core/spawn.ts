@@ -1,11 +1,14 @@
 import { spawnIntervalLimits, type GameConfig } from '../config.ts'
 import { pushOut, type Collider } from './collider.ts'
 import { createChaser, createShooter, type Enemy } from './enemy.ts'
-import { clamp, distance } from './math.ts'
+import { clamp } from './math.ts'
 import type { Rng } from './rng.ts'
 import { hullBody, type Ship } from './ship.ts'
 
-const spotAttempts = 16
+export type SpawnPoint = {
+  x: number
+  y: number
+}
 
 export function spawnIntervalAt(config: GameConfig, time: number): number {
   const start = config.spawnInterval
@@ -26,6 +29,7 @@ type SpawnWorld = {
   player: Ship
   enemies: Enemy[]
   colliders: readonly Collider[]
+  spawns: readonly SpawnPoint[]
 }
 
 export function stepSpawns(world: SpawnWorld, dt: number): void {
@@ -46,7 +50,7 @@ function summon(world: SpawnWorld): void {
   const type = pickType(world)
   const stats =
     type === 'chaser' ? world.config.ships.chaser : world.config.ships.shooter
-  const spot = findSpot(world, stats.radius, stats.hullOffset)
+  const spot = pickSpawn(world, stats.radius, stats.hullOffset)
   if (!spot) return
   const enemy =
     type === 'chaser'
@@ -62,31 +66,50 @@ function pickType(world: SpawnWorld): Enemy['type'] {
   return world.rng.next() * total < chaser ? 'chaser' : 'shooter'
 }
 
-function findSpot(
+export function pickSpawn(
   world: SpawnWorld,
   radius: number,
   hullOffset: number,
-): { x: number; y: number } | null {
-  const { arena, minSpawnDistance } = world.config
-  for (let attempt = 0; attempt < spotAttempts; attempt += 1) {
-    const x = world.rng.range(radius, arena.width - radius)
-    const y = world.rng.range(radius, arena.height - radius)
-    if (distance({ x, y }, world.player) < minSpawnDistance) continue
-    const heading = Math.atan2(world.player.y - y, world.player.x - x)
-    const body = hullBody({ x, y, heading, radius, hullOffset })
-    const ox = body.x
-    const oy = body.y
-    pushOut(body, world.colliders)
-    if (body.x !== ox || body.y !== oy) continue
-    if (
-      body.x < body.radius ||
-      body.y < body.radius ||
-      body.x > arena.width - body.radius ||
-      body.y > arena.height - body.radius
-    ) {
-      continue
-    }
-    return { x, y }
+): SpawnPoint | null {
+  const points = world.spawns
+  if (points.length === 0) return null
+  const start = Math.floor(world.rng.next() * points.length)
+  for (let step = 0; step < points.length; step += 1) {
+    const spot = points[(start + step) % points.length]
+    if (!spot || blocked(world, spot, radius, hullOffset)) continue
+    return spot
   }
   return null
+}
+
+function blocked(
+  world: SpawnWorld,
+  spot: SpawnPoint,
+  radius: number,
+  hullOffset: number,
+): boolean {
+  const heading = Math.atan2(world.player.y - spot.y, world.player.x - spot.x)
+  const body = hullBody({ x: spot.x, y: spot.y, heading, radius, hullOffset })
+  const ox = body.x
+  const oy = body.y
+  pushOut(body, world.colliders)
+  if (body.x !== ox || body.y !== oy) return true
+  const { arena } = world.config
+  if (
+    body.x < body.radius ||
+    body.y < body.radius ||
+    body.x > arena.width - body.radius ||
+    body.y > arena.height - body.radius
+  ) {
+    return true
+  }
+  const ships = [world.player, ...world.enemies]
+  for (const ship of ships) {
+    const other = hullBody(ship)
+    const dx = other.x - body.x
+    const dy = other.y - body.y
+    const reach = other.radius + body.radius
+    if (dx * dx + dy * dy <= reach * reach) return true
+  }
+  return false
 }

@@ -11,7 +11,12 @@ import {
 } from './enemy.ts'
 import type { Rng } from './rng.ts'
 import { headingUp, move, moveHull, type Ship } from './ship.ts'
-import { spawnIntervalAt, stepSpawns } from './spawn.ts'
+import {
+  pickSpawn,
+  spawnIntervalAt,
+  stepSpawns,
+  type SpawnPoint,
+} from './spawn.ts'
 
 export type MatchStatus = 'running' | 'paused' | 'ended'
 
@@ -32,22 +37,25 @@ export type World = {
   rightCooldown: number
   spawnTimer: number
   rng: Rng
+  spawns: readonly SpawnPoint[]
 }
 
 export function createWorld(
   config: GameConfig,
   colliders: Collider[],
   rng: Rng,
+  playerAt: SpawnPoint,
+  enemySpawns: readonly SpawnPoint[],
 ): World {
   const player: Ship = {
-    x: config.arena.width / 2,
-    y: config.arena.height / 2,
+    x: playerAt.x,
+    y: playerAt.y,
     heading: headingUp,
     radius: config.ships.player.radius,
     hullOffset: config.ships.player.hullOffset,
     hp: config.ships.player.hp,
   }
-  return {
+  const field: World = {
     config,
     time: 0,
     score: 0,
@@ -55,27 +63,32 @@ export function createWorld(
     endReason: null,
     colliders,
     player,
-    enemies: [
-      createChaser(
-        config,
-        player.x + config.minSpawnDistance,
-        player.y,
-        player,
-      ),
-      createShooter(
-        config,
-        player.x - config.minSpawnDistance,
-        player.y,
-        player,
-      ),
-    ],
+    enemies: [],
     balls: [],
     frontCooldown: 0,
     leftCooldown: 0,
     rightCooldown: 0,
     spawnTimer: spawnIntervalAt(config, 0),
     rng,
+    spawns: enemySpawns,
   }
+  const chaserAt = pickSpawn(
+    field,
+    config.ships.chaser.radius,
+    config.ships.chaser.hullOffset,
+  )
+  if (chaserAt) {
+    field.enemies.push(createChaser(config, chaserAt.x, chaserAt.y, player))
+  }
+  const shooterAt = pickSpawn(
+    field,
+    config.ships.shooter.radius,
+    config.ships.shooter.hullOffset,
+  )
+  if (shooterAt) {
+    field.enemies.push(createShooter(config, shooterAt.x, shooterAt.y, player))
+  }
+  return field
 }
 
 export function pauseMatch(world: World): void {

@@ -11,10 +11,9 @@ import type { Collider } from '../core/collider.ts'
 import type { Enemy } from '../core/enemy.ts'
 import { hullBody, type Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
-import { tileSize, type Island } from '../map.ts'
+import type { ArenaMap } from '../arena.ts'
 import { loadAssets, type BarName, type GameAssets } from './assets.ts'
 import { createEffects, type Effects } from './effects.ts'
-import { terrainCells } from './terrain.ts'
 
 export type Renderer = {
   draw(world: World, dt: number): void
@@ -94,8 +93,6 @@ const flameSizes = [
   { w: 14, h: 30 },
   { w: 10, h: 22 },
 ]
-const waterDriftX = 12
-const waterDriftY = 7
 const bobAmp = 2
 const bobTilt = 0.035
 const bobRate = 1.7
@@ -109,11 +106,7 @@ const frameCap = 0.05
 const phaseStep = 2.4
 const debugStroke = { width: 1, color: 0x7dff6a, pixelLine: true }
 
-export function createRenderer(
-  stage: Container,
-  islands: readonly Island[],
-  debug: boolean,
-): Renderer {
+export function createRenderer(stage: Container, debug: boolean): Renderer {
   const root = new Container()
   const arenaLayer = new Container()
   const wakeLayer = new Container()
@@ -154,7 +147,6 @@ export function createRenderer(
   let playerMark: ShipMark | null = null
   let enemyBars: BarStyle | null = null
   let fx: Effects | null = null
-  let water: TilingSprite | null = null
 
   void loadAssets(() => undefined).then(
     (loaded) => {
@@ -173,13 +165,7 @@ export function createRenderer(
       if (!ready) {
         if (!assets) return
         ready = true
-        water = paintArena(
-          arenaLayer,
-          assets.tiles,
-          frames,
-          world.config.arena,
-          islands,
-        )
+        paintArena(arenaLayer, assets.tiles, frames, assets.arena)
         ballTexture = cannonBallTexture(assets.ships)
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
         enemyBars = enemyStyle(assets.bars)
@@ -197,7 +183,6 @@ export function createRenderer(
       sea.step = dt > 0 ? Math.min(dt, frameCap) : 0
       sea.time = wrap(sea.time + sea.step, bobCycle)
       sea.live.clear()
-      if (water) driftWater(water, sea.step)
       tickFoams(sea.foams, sea.step)
       fx.sync(world, dt)
       placeMark(
@@ -238,7 +223,6 @@ export function createRenderer(
       frames.clear()
       sea.trails.clear()
       sea.live.clear()
-      water = null
     },
   }
 }
@@ -247,38 +231,55 @@ function paintArena(
   root: Container,
   sheet: Texture,
   frames: Map<number, Texture>,
-  arena: { width: number; height: number },
-  islands: readonly Island[],
-): TilingSprite {
+  map: ArenaMap,
+): void {
+  const arena = new Container()
   const tile = tileTexture(sheet, frames, waterTile)
-  const scale = tileSize / tile.frame.width
-  const water = new TilingSprite({
-    texture: tile,
-    width: arena.width,
-    height: arena.height,
-    tileScale: { x: scale, y: scale },
-  })
-  const ground = new Container()
-  root.addChild(water, ground)
-  const cols = Math.floor(arena.width / tileSize)
-  const rows = Math.floor(arena.height / tileSize)
-  for (const cell of terrainCells(islands, cols, rows)) {
-    putTile(ground, sheet, frames, cell.x, cell.y, cell.id)
+  const scale = map.tileSize / tile.frame.width
+  arena.addChild(
+    new TilingSprite({
+      texture: tile,
+      width: map.width * map.tileSize,
+      height: map.height * map.tileSize,
+      tileScale: { x: scale, y: scale },
+    }),
+  )
+  paintCells(arena, sheet, frames, map.shallow, map)
+  paintCells(arena, sheet, frames, map.ground, map)
+  for (const decor of map.decor) {
+    const sprite = new Sprite(tileTexture(sheet, frames, decor.id))
+    sprite.position.set(
+      decor.x * map.tileSize + decor.offsetX,
+      decor.y * map.tileSize + decor.offsetY,
+    )
+    sprite.width = map.tileSize
+    sprite.height = map.tileSize
+    arena.addChild(sprite)
   }
-  for (const island of islands) {
-    for (const decor of island.decor) {
-      putTile(
-        ground,
-        sheet,
-        frames,
-        island.x + decor.x,
-        island.y + decor.y,
-        decor.id,
-      )
-    }
+  root.addChild(arena)
+  arena.cacheAsTexture(true)
+}
+
+function paintCells(
+  root: Container,
+  sheet: Texture,
+  frames: Map<number, Texture>,
+  cells: readonly number[],
+  map: ArenaMap,
+): void {
+  for (let i = 0; i < cells.length; i += 1) {
+    const id = cells[i]
+    if (!id) continue
+    putTile(
+      root,
+      sheet,
+      frames,
+      i % map.width,
+      Math.floor(i / map.width),
+      id,
+      map.tileSize,
+    )
   }
-  ground.cacheAsTexture(true)
-  return water
 }
 
 function putTile(
@@ -288,6 +289,7 @@ function putTile(
   x: number,
   y: number,
   id: number,
+  tileSize: number,
 ): void {
   const sprite = new Sprite(tileTexture(sheet, frames, id))
   sprite.position.set(x * tileSize, y * tileSize)
@@ -552,17 +554,6 @@ function placeBalls(
     sprite.visible = true
     sprite.position.set(ball.x, ball.y)
   }
-}
-
-function driftWater(water: TilingSprite, step: number): void {
-  water.tilePosition.x = wrap(
-    water.tilePosition.x + waterDriftX * step,
-    tileSize,
-  )
-  water.tilePosition.y = wrap(
-    water.tilePosition.y + waterDriftY * step,
-    tileSize,
-  )
 }
 
 function rideOf(sea: Sea, ship: Ship): Ride {
