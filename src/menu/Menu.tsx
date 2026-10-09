@@ -1,11 +1,14 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import type { MatchConfig } from '../api/types.ts'
 import type { PlayerOptions } from '../game/options.ts'
 import { Button } from '../ui/Button.tsx'
 import { Controls } from '../ui/Controls.tsx'
 import { Panel } from '../ui/Panel.tsx'
 import { useDialog } from '../ui/useDialog.ts'
 import { NetworkPanel } from './NetworkPanel.tsx'
+import { History } from './History.tsx'
 import { Options } from './Options.tsx'
+import { Ranking } from './Ranking.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
 const shipArt = '/assets/png/default/ships/ship_2.png'
@@ -55,6 +58,10 @@ export function Menu({
       {view !== 'home' && view !== 'options' && (
         <Log
           tab={view}
+          config={{
+            sessionTime: options.sessionDuration,
+            spawnInterval: options.spawnInterval,
+          }}
           onTab={(tab) => show(tab, tabId(tab))}
           onMenu={() => show('home', 'menu-play')}
         />
@@ -141,19 +148,15 @@ function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function Log({
   tab,
+  config,
   onTab,
   onMenu,
 }: {
   tab: LogTab
+  config: MatchConfig
   onTab: (tab: LogTab) => void
   onMenu: () => void
 }) {
-  const title = tab === 'ranking' ? 'Classificação' : 'Histórico'
-  const copy =
-    tab === 'ranking'
-      ? 'A classificação aparece aqui.'
-      : 'O histórico aparece aqui.'
-
   return (
     <Panel wide>
       <h1 className="menu-heading">Diário do capitão</h1>
@@ -163,8 +166,7 @@ function Log({
         id={tab === 'ranking' ? 'panel-ranking' : 'panel-history'}
         aria-labelledby={tab === 'ranking' ? 'tab-ranking' : 'tab-history'}
       >
-        <h2 className="menu-heading">{title}</h2>
-        <p className="menu-copy">{copy}</p>
+        {tab === 'ranking' ? <Ranking config={config} /> : <History />}
       </div>
       <div className="menu-stack">
         <Button onClick={onMenu}>Menu principal</Button>
