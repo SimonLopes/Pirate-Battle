@@ -11,12 +11,7 @@ import {
 } from './enemy.ts'
 import type { Rng } from './rng.ts'
 import { headingUp, move, moveHull, type Ship } from './ship.ts'
-import {
-  pickSpawn,
-  spawnIntervalAt,
-  stepSpawns,
-  type SpawnPoint,
-} from './spawn.ts'
+import { pickSpawn, stepSpawns, type SpawnPoint } from './spawn.ts'
 
 export type MatchStatus = 'running' | 'paused' | 'ended'
 
@@ -37,7 +32,6 @@ export type World = {
   rightCooldown: number
   spawnTimer: number
   rng: Rng
-  spawns: readonly SpawnPoint[]
 }
 
 export function createWorld(
@@ -45,7 +39,6 @@ export function createWorld(
   colliders: Collider[],
   rng: Rng,
   playerAt: SpawnPoint,
-  enemySpawns: readonly SpawnPoint[],
 ): World {
   const player: Ship = {
     x: playerAt.x,
@@ -68,9 +61,8 @@ export function createWorld(
     frontCooldown: 0,
     leftCooldown: 0,
     rightCooldown: 0,
-    spawnTimer: spawnIntervalAt(config, 0),
+    spawnTimer: config.spawnInterval,
     rng,
-    spawns: enemySpawns,
   }
   const chaserAt = pickSpawn(
     field,

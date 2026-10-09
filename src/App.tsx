@@ -9,7 +9,7 @@ import {
   saveOptions,
   type PlayerOptions,
 } from './game/options.ts'
-import { saveResult, type MatchResult } from './game/result.ts'
+import { loadResult, saveResult, type MatchResult } from './game/result.ts'
 import { GameCanvas } from './game/render/GameCanvas.tsx'
 import { Menu } from './menu/Menu.tsx'
 import { Result } from './menu/Result.tsx'
@@ -20,7 +20,7 @@ import './ui/ui.css'
 type Screen = 'menu' | 'game' | 'result'
 
 function App() {
-  const [result, setResult] = useState<MatchResult | null>(null)
+  const [result, setResult] = useState<MatchResult | null>(loadResult)
   const [matchRecord, setMatchRecord] = useState<MatchRecord | null>(null)
   const [screen, setScreen] = useState<Screen>('menu')
   const [options, setOptions] = useState(loadOptions)
@@ -85,7 +85,7 @@ function App() {
       />
     )
   } else {
-    view = <Menu options={options} onPlay={play} onSave={save} />
+    view = <Menu options={options} last={result} onPlay={play} onSave={save} />
   }
 
   return (

@@ -1,7 +1,7 @@
-import { spawnIntervalLimits, type GameConfig } from '../config.ts'
-import { pushOut, type Collider } from './collider.ts'
+import type { GameConfig } from '../config.ts'
+import { overlaps, type Collider } from './collider.ts'
 import { createChaser, createShooter, type Enemy } from './enemy.ts'
-import { clamp } from './math.ts'
+import { distance } from './math.ts'
 import type { Rng } from './rng.ts'
 import { hullBody, type Ship } from './ship.ts'
 
@@ -10,39 +10,20 @@ export type SpawnPoint = {
   y: number
 }
 
-export function spawnIntervalAt(config: GameConfig, time: number): number {
-  const start = config.spawnInterval
-  if (!config.spawnRamp.enabled) return start
-  const floor = Math.max(config.spawnRamp.minInterval, spawnIntervalLimits.min)
-  const target = Math.min(start, floor)
-  const duration = config.sessionDuration
-  const progress = duration > 0 ? clamp(time / duration, 0, 1) : 1
-  const interval = start + (target - start) * progress
-  return Math.max(spawnIntervalLimits.min, interval)
-}
-
 type SpawnWorld = {
   config: GameConfig
-  time: number
   spawnTimer: number
   rng: Rng
   player: Ship
   enemies: Enemy[]
   colliders: readonly Collider[]
-  spawns: readonly SpawnPoint[]
 }
 
 export function stepSpawns(world: SpawnWorld, dt: number): void {
   world.spawnTimer -= dt
-  const at = world.time + dt
   while (world.spawnTimer <= 0) {
     summon(world)
-    const interval = spawnIntervalAt(world.config, at)
-    if (interval <= 0) {
-      world.spawnTimer = 0
-      return
-    }
-    world.spawnTimer += interval
+    world.spawnTimer += world.config.spawnInterval
   }
 }
 
@@ -71,45 +52,45 @@ export function pickSpawn(
   radius: number,
   hullOffset: number,
 ): SpawnPoint | null {
-  const points = world.spawns
-  if (points.length === 0) return null
-  const start = Math.floor(world.rng.next() * points.length)
-  for (let step = 0; step < points.length; step += 1) {
-    const spot = points[(start + step) % points.length]
-    if (!spot || blocked(world, spot, radius, hullOffset)) continue
-    return spot
+  const { arena, spawnArea } = world.config
+  const edge = spawnArea.edgeMargin
+  for (let tries = 0; tries < spawnArea.attempts; tries += 1) {
+    const spot = {
+      x: world.rng.range(edge, arena.width - edge),
+      y: world.rng.range(edge, arena.height - edge),
+    }
+    if (isOpen(world, spot, radius, hullOffset)) return spot
   }
   return null
 }
 
-function blocked(
+function isOpen(
   world: SpawnWorld,
   spot: SpawnPoint,
   radius: number,
   hullOffset: number,
 ): boolean {
+  const { arena, spawnArea } = world.config
+  if (distance(spot, world.player) < spawnArea.playerDistance) return false
   const heading = Math.atan2(world.player.y - spot.y, world.player.x - spot.x)
   const body = hullBody({ x: spot.x, y: spot.y, heading, radius, hullOffset })
-  const ox = body.x
-  const oy = body.y
-  pushOut(body, world.colliders)
-  if (body.x !== ox || body.y !== oy) return true
-  const { arena } = world.config
+  const reach = body.radius + spawnArea.edgeMargin
   if (
-    body.x < body.radius ||
-    body.y < body.radius ||
-    body.x > arena.width - body.radius ||
-    body.y > arena.height - body.radius
+    body.x < reach ||
+    body.y < reach ||
+    body.x > arena.width - reach ||
+    body.y > arena.height - reach
   ) {
-    return true
+    return false
   }
-  const ships = [world.player, ...world.enemies]
-  for (const ship of ships) {
-    const other = hullBody(ship)
-    const dx = other.x - body.x
-    const dy = other.y - body.y
-    const reach = other.radius + body.radius
-    if (dx * dx + dy * dy <= reach * reach) return true
+  const padded = { ...body, radius: body.radius + spawnArea.islandMargin }
+  if (overlaps(padded, world.colliders)) return false
+  for (const enemy of world.enemies) {
+    const other = hullBody(enemy)
+    const gap = other.radius + body.radius
+    if ((other.x - body.x) ** 2 + (other.y - body.y) ** 2 <= gap * gap) {
+      return false
+    }
   }
-  return false
+  return true
 }

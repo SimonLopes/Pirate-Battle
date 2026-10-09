@@ -59,7 +59,6 @@ export class GameSession {
       arenaColliders(arena),
       rng,
       arena.spawns.player,
-      arena.spawns.enemies,
     )
     this.actions = idleActions()
     this.touch = idleTouch()

@@ -11,9 +11,11 @@ export type GameConfig = {
   fixedDt: number
   maxSteps: number
   spawnInterval: number
-  spawnRamp: {
-    enabled: boolean
-    minInterval: number
+  spawnArea: {
+    playerDistance: number
+    islandMargin: number
+    edgeMargin: number
+    attempts: number
   }
   spawnDistribution: {
     chaser: number
@@ -70,9 +72,11 @@ export const defaultConfig: GameConfig = {
   fixedDt: 1 / 60,
   maxSteps: 5,
   spawnInterval: 3,
-  spawnRamp: {
-    enabled: true,
-    minInterval: spawnIntervalLimits.min,
+  spawnArea: {
+    playerDistance: 520,
+    islandMargin: 24,
+    edgeMargin: 48,
+    attempts: 30,
   },
   spawnDistribution: {
     chaser: 0.5,

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { MatchConfig } from '../api/types.ts'
 import type { PlayerOptions } from '../game/options.ts'
+import type { MatchResult } from '../game/result.ts'
 import { Button } from '../ui/Button.tsx'
 import { Controls } from '../ui/Controls.tsx'
 import { Panel } from '../ui/Panel.tsx'
@@ -9,6 +10,7 @@ import { NetworkPanel } from './NetworkPanel.tsx'
 import { History } from './History.tsx'
 import { Options } from './Options.tsx'
 import { Ranking } from './Ranking.tsx'
+import { LastResult } from './Result.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
 const shipArt = '/assets/png/default/ships/ship_2.png'
@@ -17,10 +19,12 @@ type LogTab = 'ranking' | 'history'
 
 export function Menu({
   options,
+  last,
   onPlay,
   onSave,
 }: {
   options: PlayerOptions
+  last: MatchResult | null
   onPlay: () => void
   onSave: (options: PlayerOptions) => boolean
 }) {
@@ -43,6 +47,7 @@ export function Menu({
     <main className="menu-scene">
       {view === 'home' && (
         <Home
+          last={last}
           onPlay={onPlay}
           onOptions={() => show('options', 'session-time')}
           onTab={(tab) => show(tab, tabId(tab))}
@@ -71,10 +76,12 @@ export function Menu({
 }
 
 function Home({
+  last,
   onPlay,
   onOptions,
   onTab,
 }: {
+  last: MatchResult | null
   onPlay: () => void
   onOptions: () => void
   onTab: (tab: LogTab) => void
@@ -100,6 +107,7 @@ function Home({
         <p className="menu-tagline">
           Navigate the islands. Survive the battle.
         </p>
+        {last && <LastResult result={last} />}
         <Tabs tab={null} onTab={onTab} />
         <div className="menu-stack menu-help">
           <Button

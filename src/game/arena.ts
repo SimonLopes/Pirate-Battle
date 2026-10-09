@@ -26,7 +26,6 @@ export type ArenaMap = {
   }[]
   spawns: {
     player: ArenaPoint
-    enemies: ArenaPoint[]
   }
 }
 

@@ -129,7 +129,8 @@ function isArena(asset: Loaded): asset is ArenaMap {
     asset.ground.length === cells &&
     Array.isArray(asset.decor) &&
     Array.isArray(asset.colliders) &&
-    Array.isArray(asset.spawns?.enemies)
+    typeof asset.spawns?.player?.x === 'number' &&
+    typeof asset.spawns.player.y === 'number'
   )
 }
 

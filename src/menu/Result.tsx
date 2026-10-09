@@ -17,7 +17,7 @@ export function Result({
   onPlay: () => void
   onMenu: () => void
 }) {
-  const reason = result.reason === 'time' ? 'Time up' : 'Defeated'
+  const reason = reasonLabel(result)
   const dialogRef = useDialog(true, onMenu)
   const failed = status === 'failed'
 
@@ -65,6 +65,25 @@ export function Result({
       </div>
     </main>
   )
+}
+
+export function LastResult({ result }: { result: MatchResult }) {
+  return (
+    <section className="last-result" aria-labelledby="last-result-title">
+      <h2 id="last-result-title" className="menu-copy">
+        Last battle
+      </h2>
+      <p className="result-summary">
+        {result.score} points ·{' '}
+        <time dateTime={span(result.played)}>{clock(result.played)}</time> ·{' '}
+        {reasonLabel(result)}
+      </p>
+    </section>
+  )
+}
+
+function reasonLabel(result: MatchResult): string {
+  return result.reason === 'time' ? 'Time up' : 'Defeated'
 }
 
 function recordLabel(status: RecordStatus): string {

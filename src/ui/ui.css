@@ -68,6 +68,14 @@ body {
   margin-top: 12px;
 }
 
+.last-result {
+  margin: 0 0 16px;
+}
+
+.last-result .menu-copy {
+  margin: 0;
+}
+
 .menu-tagline,
 .menu-copy {
   margin: 0 0 16px;
