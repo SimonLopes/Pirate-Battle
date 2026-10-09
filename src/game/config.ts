@@ -9,6 +9,10 @@ export type GameConfig = {
   fixedDt: number
   maxSteps: number
   spawnInterval: number
+  spawnRamp: {
+    enabled: boolean
+    minInterval: number
+  }
   spawnDistribution: {
     chaser: number
     shooter: number
@@ -52,6 +56,10 @@ export const defaultConfig: GameConfig = {
   fixedDt: 1 / 60,
   maxSteps: 5,
   spawnInterval: 3,
+  spawnRamp: {
+    enabled: true,
+    minInterval: spawnIntervalLimits.min,
+  },
   spawnDistribution: {
     chaser: 0.5,
     shooter: 0.5,

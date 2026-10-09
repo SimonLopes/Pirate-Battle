@@ -44,7 +44,8 @@ export class GameSession {
     adopt: (session: GameSession) => void,
     seed = Date.now(),
   ) {
-    const islands = pickLayout(createRng(seed))
+    const rng = createRng(seed)
+    const islands = pickLayout(rng)
     this.app = app
     this.hud = hud
     this.adopt = adopt
@@ -52,6 +53,7 @@ export class GameSession {
     this.world = createWorld(
       this.config,
       islands.map((island) => island.collider),
+      rng,
     )
     this.actions = idleActions()
     this.touch = idleTouch()

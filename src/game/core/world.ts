@@ -9,7 +9,9 @@ import {
   stepEnemies,
   type Enemy,
 } from './enemy.ts'
+import type { Rng } from './rng.ts'
 import { headingUp, move, type Ship } from './ship.ts'
+import { spawnIntervalAt, stepSpawns } from './spawn.ts'
 
 export type MatchStatus = 'running' | 'paused' | 'ended'
 
@@ -28,9 +30,15 @@ export type World = {
   frontCooldown: number
   leftCooldown: number
   rightCooldown: number
+  spawnTimer: number
+  rng: Rng
 }
 
-export function createWorld(config: GameConfig, colliders: Collider[]): World {
+export function createWorld(
+  config: GameConfig,
+  colliders: Collider[],
+  rng: Rng,
+): World {
   const player: Ship = {
     x: config.arena.width / 2,
     y: config.arena.height / 2,
@@ -64,6 +72,8 @@ export function createWorld(config: GameConfig, colliders: Collider[]): World {
     frontCooldown: 0,
     leftCooldown: 0,
     rightCooldown: 0,
+    spawnTimer: spawnIntervalAt(config, 0),
+    rng,
   }
 }
 
@@ -150,6 +160,7 @@ export function step(world: World, dt: number, actions: Actions): void {
       world.config,
       world.colliders,
     )
+    stepSpawns(world, slice)
   }
   world.time += slice
   if (slice < dt || world.time >= limit) world.time = limit
