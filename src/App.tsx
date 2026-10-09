@@ -1,4 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPendingMatch } from './api/pending.ts'
+import { useMatchSave } from './api/useMatchSave.ts'
+import type { MatchRecord } from './api/types.ts'
 import { enterFullscreenOnTouch } from './game/fullscreen.ts'
 import {
   configFromOptions,
@@ -18,11 +21,13 @@ type Screen = 'menu' | 'game' | 'result'
 
 function App() {
   const [result, setResult] = useState<MatchResult | null>(null)
+  const [matchRecord, setMatchRecord] = useState<MatchRecord | null>(null)
   const [screen, setScreen] = useState<Screen>('menu')
   const [options, setOptions] = useState(loadOptions)
   const [matchConfig, setMatchConfig] = useState(() =>
     configFromOptions(options),
   )
+  const matchSave = useMatchSave()
   const locked = useCoarsePortrait()
   const screenRef = useRef(screen)
 
@@ -40,7 +45,16 @@ function App() {
   }
 
   const finish = (next: MatchResult) => {
+    const record = createPendingMatch({
+      score: next.score,
+      played: next.played,
+      reason: next.reason,
+      sessionTime: matchConfig.sessionDuration,
+      spawnInterval: matchConfig.spawnInterval,
+    })
+    matchSave.submit(record)
     saveResult(next)
+    setMatchRecord(record)
     setResult(next)
     setScreen('result')
   }
@@ -60,9 +74,15 @@ function App() {
         onEnd={finish}
       />
     )
-  } else if (screen === 'result' && result) {
+  } else if (screen === 'result' && result && matchRecord) {
     view = (
-      <Result result={result} onPlay={play} onMenu={() => setScreen('menu')} />
+      <Result
+        result={result}
+        status={matchSave.statusFor(matchRecord)}
+        onRetry={() => matchSave.retry(matchRecord)}
+        onPlay={play}
+        onMenu={() => setScreen('menu')}
+      />
     )
   } else {
     view = <Menu options={options} onPlay={play} onSave={save} />

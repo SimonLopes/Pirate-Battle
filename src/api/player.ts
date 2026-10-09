@@ -1,5 +1,7 @@
 const storageKey = 'pirate-battle.player'
 
+export const playerName = 'Captain'
+
 let current: string | null = null
 
 export function loadPlayerId(): string {
