@@ -15,10 +15,8 @@ export function canFullscreen(): boolean {
   if (isRejected) return false
   const root = appRoot()
   if (!root) return false
-  if (typeof root.requestFullscreen === 'function') {
-    return document.fullscreenEnabled
-  }
-  return hasWebkitRequest(root)
+  if (hasStandardRequest(root)) return true
+  return hasWebkitRequest(root) && webkitEnabled()
 }
 
 export function isFullscreen(): boolean {
@@ -29,7 +27,7 @@ export function enterFullscreen(): void {
   if (isFullscreen() || !canFullscreen()) return
   const root = appRoot()
   if (!root) return
-  if (typeof root.requestFullscreen === 'function') {
+  if (hasStandardRequest(root)) {
     void root.requestFullscreen().catch(reject)
     return
   }
@@ -84,6 +82,18 @@ function webkitElement(): Element | null {
   const element = document.webkitFullscreenElement
   if (element instanceof Element) return element
   return null
+}
+
+function hasStandardRequest(element: HTMLElement): boolean {
+  return (
+    typeof element.requestFullscreen === 'function' &&
+    document.fullscreenEnabled
+  )
+}
+
+function webkitEnabled(): boolean {
+  if (!('webkitFullscreenEnabled' in document)) return false
+  return document.webkitFullscreenEnabled === true
 }
 
 function hasWebkitRequest(element: HTMLElement): element is VendorElement {

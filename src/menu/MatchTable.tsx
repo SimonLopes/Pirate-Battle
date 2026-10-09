@@ -16,7 +16,7 @@ type Props = {
   name: string
   queryKey: QueryKey
   fetchPage: (params: PageParams, signal: AbortSignal) => Promise<MatchPage>
-  caption: (data: MatchPage | undefined) => string
+  caption: (data: MatchPage | undefined) => ReactNode
   columns: string[]
   tableClass?: string
   emptyText: string

@@ -97,6 +97,13 @@ body {
   margin-top: 0;
 }
 
+.home-links .menu-button-compact {
+  width: 184px;
+  padding: 0 18px 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .menu-logo {
   position: fixed;
   right: max(16px, env(safe-area-inset-right));
@@ -112,6 +119,16 @@ body {
 
 .last-result .menu-copy {
   margin: 0;
+  color: #a8987a;
+  font-size: 11px;
+}
+
+.last-result .result-summary {
+  margin-top: 2px;
+  color: #bfae8a;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 .menu-captain {
@@ -153,8 +170,7 @@ body {
 }
 
 .menu-heading:focus {
-  outline: 3px solid #ffe7a3;
-  outline-offset: 4px;
+  outline: none;
 }
 
 .menu-score {
@@ -347,10 +363,35 @@ body {
   box-shadow: inset 0 0 0 1px rgba(240, 212, 138, 0.45);
 }
 
+.ranking-table tbody .ranking-captain-cell {
+  width: 100%;
+  max-width: 0;
+}
+
 .ranking-name {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.ranking-captain {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.ranking-config .ranking-captain {
+  max-width: 60%;
+}
+
+.ranking-star,
+.ranking-you {
+  flex-shrink: 0;
 }
 
 .ranking-star {
@@ -530,6 +571,7 @@ body {
   margin: 0;
   padding: 0 28px 4px;
   border: 0;
+  border-radius: 14px;
   appearance: none;
   background-color: transparent;
   background-repeat: no-repeat;
@@ -545,8 +587,8 @@ body {
 
 .menu-button:focus {
   outline: 3px solid #ffe7a3;
-  outline-offset: 4px;
-  box-shadow: 0 0 0 2px #06283d;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px #06283d;
 }
 
 .menu-button:disabled {
@@ -775,6 +817,7 @@ body {
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   appearance: none;
   background-color: transparent;
   background-image: url('/assets/png/default/ui/controls/button_round_normal.png');
@@ -796,11 +839,24 @@ body {
 }
 
 .hud-fullscreen {
-  position: absolute;
-  left: 50%;
-  top: max(12px, env(safe-area-inset-top));
-  z-index: 1;
-  transform: translateX(-50%);
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: -8px;
+  opacity: 0.6;
+  pointer-events: auto;
+  transition: opacity 150ms ease;
+}
+
+.hud-fullscreen svg {
+  width: 22px;
+  height: 22px;
+}
+
+.hud-fullscreen:active,
+.hud-fullscreen:focus,
+.hud-fullscreen:focus-visible {
+  opacity: 1;
 }
 
 .option-check {
@@ -878,17 +934,30 @@ body {
   padding: max(24px, env(safe-area-inset-top))
     max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
     max(24px, env(safe-area-inset-left));
-  background: #06283d;
+  background: #06283d url('/assets/ui_scene_background.png') center / cover
+    no-repeat;
   text-align: center;
 }
 
 .rotate-gate:focus {
-  outline: 3px solid #ffe7a3;
-  outline-offset: -8px;
+  outline: none;
+}
+
+.rotate-gate .menu-panel {
+  width: min(360px, 100%);
+  margin: 0;
+}
+
+.rotate-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 8px;
+  color: #f0d48a;
 }
 
 .rotate-gate .menu-copy {
-  max-width: 22rem;
+  margin-bottom: 0;
 }
 
 .control-hint {
@@ -913,9 +982,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .control-hint,
-  .ranking-table {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -1007,6 +1079,12 @@ body {
 
   .menu-panel-home {
     width: min(640px, calc(100% - 112px));
+  }
+
+  .home-links .menu-button-compact {
+    width: 176px;
+    padding: 0 14px 2px;
+    font-size: 12px;
   }
 
   .home {

@@ -43,7 +43,7 @@ function Row({
   return (
     <tr className={isMine ? 'ranking-mine' : undefined}>
       <td className="ranking-rank">{String(rank).padStart(2, '0')}</td>
-      <th scope="row">
+      <th scope="row" className="ranking-captain-cell">
         <span className="ranking-name">
           {rank === 1 && (
             <img
@@ -53,7 +53,9 @@ function Row({
               draggable={false}
             />
           )}
-          {record.playerName}
+          <span className="ranking-captain" title={record.playerName}>
+            {record.playerName}
+          </span>
           {isMine && <span className="ranking-you">You</span>}
         </span>
       </th>

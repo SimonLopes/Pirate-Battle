@@ -32,21 +32,25 @@ const coverOpacity = 0.1
 const pads: {
   binding: 'fireFront' | 'fireLeft' | 'fireRight'
   label: string
+  tag: string
   icon: string
 }[] = [
   {
     binding: 'fireFront',
     label: 'Fire forward',
+    tag: 'Front',
     icon: `${art}/icon_fire_front.png`,
   },
   {
     binding: 'fireLeft',
     label: 'Fire left',
+    tag: 'Left',
     icon: `${art}/icon_fire_left.png`,
   },
   {
     binding: 'fireRight',
     label: 'Fire right',
+    tag: 'Right',
     icon: `${art}/icon_fire_right.png`,
   },
 ]
@@ -93,6 +97,7 @@ export function TouchControls({
           key={pad.binding}
           binding={pad.binding}
           label={pad.label}
+          tag={pad.tag}
           icon={pad.icon}
           box={layout[pad.binding]}
           running={running}
@@ -224,6 +229,7 @@ function Joystick({
 function HoldButton({
   binding,
   label,
+  tag,
   icon,
   box,
   running,
@@ -231,6 +237,7 @@ function HoldButton({
 }: {
   binding: TouchBinding
   label: string
+  tag: string
   icon: string
   box: Box
   running: boolean
@@ -309,7 +316,10 @@ function HoldButton({
       onBlur={() => setKeyed(false)}
       style={buttonStyle(box, buttonFace(held, over), keyed)}
     >
-      <img src={icon} alt="" draggable={false} style={iconStyle} />
+      <img src={icon} alt="" draggable={false} style={taggedIconStyle} />
+      <span aria-hidden style={tagStyle(box.w)}>
+        {tag}
+      </span>
     </button>
   )
 }
@@ -465,6 +475,32 @@ const iconStyle: CSSProperties = {
   userSelect: 'none',
 }
 
+const taggedIconStyle: CSSProperties = {
+  ...iconStyle,
+  top: '40%',
+  width: '40%',
+  height: '40%',
+}
+
+function tagStyle(size: number): CSSProperties {
+  return {
+    position: 'absolute',
+    left: '50%',
+    top: '72%',
+    transform: 'translate(-50%, -50%)',
+    color: '#f6edd6',
+    fontSize: Math.max(9, Math.round(size * 0.16)),
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    lineHeight: 1,
+    textTransform: 'uppercase',
+    textShadow: '0 1px 2px #06283d',
+    whiteSpace: 'nowrap',
+    pointerEvents: 'none',
+    userSelect: 'none',
+  }
+}
+
 function applyStick(session: GameSession, aim: StickAim) {
   if (session.world.status !== 'running') return
   const move = stickMove(session.world.player.heading, aim)
@@ -537,6 +573,7 @@ function buttonStyle(
     margin: 0,
     padding: 0,
     border: 'none',
+    borderRadius: '50%',
     backgroundColor: 'transparent',
     backgroundImage: `url(${faces[face]})`,
     backgroundPosition: 'center',

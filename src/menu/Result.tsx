@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { RecordStatus } from '../api/useMatchSave.ts'
 import type { MatchResult } from '../game/result.ts'
 import { Button } from '../ui/Button.tsx'
@@ -19,7 +20,15 @@ export function Result({
 }) {
   const reason = reasonLabel(result)
   const dialogRef = useDialog(true, onMenu)
+  const [isRetrying, setIsRetrying] = useState(false)
   const failed = status === 'failed'
+  const isSaving = status === 'saving'
+  const canShowRetry = failed || (isRetrying && isSaving)
+
+  const retry = () => {
+    setIsRetrying(true)
+    onRetry()
+  }
 
   return (
     <main className="menu-scene">
@@ -53,9 +62,9 @@ export function Result({
             {recordLabel(status)}
           </p>
           <div className="menu-stack result-actions">
-            {failed && (
-              <Button variant="secondary" onClick={onRetry}>
-                Retry
+            {canShowRetry && (
+              <Button variant="secondary" disabled={isSaving} onClick={retry}>
+                {isSaving ? 'Saving…' : 'Retry'}
               </Button>
             )}
             <Button onClick={onPlay}>Play again</Button>

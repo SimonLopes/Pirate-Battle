@@ -51,6 +51,11 @@ const counter: CSSProperties = {
   containerType: 'inline-size',
 }
 
+const timerCounter: CSSProperties = {
+  ...counter,
+  marginLeft: 'auto',
+}
+
 const counterPlate: CSSProperties = {
   position: 'absolute',
   inset: 0,
@@ -147,7 +152,7 @@ function HudScore({
       <Counter icon={scoreArt} label="Score ">
         {view.score}
       </Counter>
-      <Counter icon={timeArt} label="Time left ">
+      <Counter icon={timeArt} label="Time left " style={timerCounter}>
         <time dateTime={`PT${view.secondsLeft}S`}>
           {clock(view.secondsLeft)}
         </time>
@@ -160,14 +165,16 @@ function HudScore({
 function Counter({
   icon,
   label,
+  style = counter,
   children,
 }: {
   icon: string
   label: string
+  style?: CSSProperties
   children: ReactNode
 }) {
   return (
-    <p style={counter}>
+    <p style={style}>
       <span aria-hidden="true" style={counterPlate} />
       <span style={counterRow}>
         <img src={icon} alt="" draggable={false} style={counterIcon} />
@@ -229,7 +236,7 @@ function PauseDialog({
           <p id="pause-hint" className="menu-copy">
             Ready when you are.
           </p>
-          
+
           <div className="menu-stack">
             <Button onClick={onResume}>Resume</Button>
             <Button variant="secondary" onClick={onMenu}>

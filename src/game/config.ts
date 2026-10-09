@@ -65,7 +65,7 @@ export type GameConfig = {
 
 export const sessionDurationLimits = { min: 60, max: 180 } as const
 
-export const spawnIntervalLimits = { min: 1, max: 10 } as const
+export const spawnIntervalLimits = { min: 2, max: 10 } as const
 
 export const defaultConfig: GameConfig = {
   sessionDuration: 120,

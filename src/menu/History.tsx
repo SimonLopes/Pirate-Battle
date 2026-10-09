@@ -12,9 +12,15 @@ export function History() {
       fetchPage={(params, signal) => getHistory(playerId, params, signal)}
       caption={(data) => {
         const captain = data?.items[0]?.playerName
-        return captain
-          ? `${captain} · Your recent battles`
-          : 'Your recent battles'
+        if (!captain) return 'Your recent battles'
+        return (
+          <>
+            <span className="ranking-captain" title={captain}>
+              {captain}
+            </span>{' '}
+            · Your recent battles
+          </>
+        )
       }}
       columns={['Date', 'Points', 'Duration', 'Result']}
       tableClass="history-table"
