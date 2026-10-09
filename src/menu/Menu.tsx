@@ -14,6 +14,7 @@ import { LastResult } from './Result.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
 const shipArt = '/assets/png/default/ships/ship_2.png'
+const logoArt = '/assets/logo_jungle_gaming.svg'
 
 type LogTab = 'ranking' | 'history'
 
@@ -98,46 +99,58 @@ function Home({
 
   return (
     <>
-      <Panel>
-        <h1 className="menu-title">
-          <img src={titleArt} alt="Pirate Battle" draggable={false} />
-        </h1>
-        <p className="menu-captain">
-          <span className="sr-only">Captain name: </span>
-          {captainName}
-        </p>
-        <p className="menu-tagline">Set sail. Take command.</p>
-        <div className="menu-stack">
-          <Button id="menu-play" onClick={onPlay}>
-            Play
-          </Button>
-          <Button id="menu-options" variant="secondary" onClick={onOptions}>
-            Options
-          </Button>
+      <Panel className="menu-panel-home">
+        <div className="home">
+          <div className="home-lead">
+            <h1 className="menu-title">
+              <img src={titleArt} alt="Pirate Battle" draggable={false} />
+            </h1>
+            <p className="menu-captain">
+              <span className="sr-only">Captain name: </span>
+              {captainName}
+            </p>
+            <p className="menu-tagline">Set sail. Take command.</p>
+            <div className="home-main">
+              <Button id="menu-play" onClick={onPlay}>
+                Play
+              </Button>
+              <Button id="menu-options" onClick={onOptions}>
+                Options
+              </Button>
+            </div>
+            {isOptionsUnsaved && (
+              <p className="option-notice" role="status">
+                Options will reset when you reload.
+              </p>
+            )}
+          </div>
+          <div className="home-side">
+            <img className="menu-mark" src={shipArt} alt="" draggable={false} />
+            <p className="menu-tagline menu-tagline-plain">
+              Navigate the islands. Survive the battle.
+            </p>
+            {last && <LastResult result={last} />}
+            <div className="home-links">
+              <Tabs tab={null} onTab={onTab} />
+              <Button
+                id="menu-help"
+                compact
+                variant="secondary"
+                onClick={() => setHelp(true)}
+              >
+                How to play
+              </Button>
+            </div>
+          </div>
         </div>
-        {isOptionsUnsaved && (
-          <p className="option-notice" role="status">
-            Options will reset when you reload.
-          </p>
-        )}
-        <img className="menu-mark" src={shipArt} alt="" draggable={false} />
-        <p className="menu-tagline">
-          Navigate the islands. Survive the battle.
-        </p>
-        {last && <LastResult result={last} />}
-        <Tabs tab={null} onTab={onTab} />
-        <div className="menu-stack menu-help">
-          <Button
-            id="menu-help"
-            compact
-            variant="secondary"
-            onClick={() => setHelp(true)}
-          >
-            How to play
-          </Button>
-        </div>
-        <NetworkPanel />
       </Panel>
+      <NetworkPanel />
+      <img
+        className="menu-logo"
+        src={logoArt}
+        alt="Jungle Gaming"
+        draggable={false}
+      />
       <HowToPlay open={help} onClose={() => setHelp(false)} />
     </>
   )
@@ -184,17 +197,20 @@ function Log({
 }) {
   return (
     <Panel wide>
-      <h1 className="menu-heading">Captain's log</h1>
-      <Tabs tab={tab} onTab={onTab} />
-      <div
-        role="tabpanel"
-        id={tab === 'ranking' ? 'panel-ranking' : 'panel-history'}
-        aria-labelledby={tab === 'ranking' ? 'tab-ranking' : 'tab-history'}
-      >
-        {tab === 'ranking' ? <Ranking config={config} /> : <History />}
-      </div>
-      <div className="menu-stack">
-        <Button onClick={onMenu}>Main menu</Button>
+      <div className="log">
+        <h1 className="menu-heading log-head">Captain's log</h1>
+        <Tabs tab={tab} onTab={onTab} />
+        <div
+          className="log-data"
+          role="tabpanel"
+          id={tab === 'ranking' ? 'panel-ranking' : 'panel-history'}
+          aria-labelledby={tab === 'ranking' ? 'tab-ranking' : 'tab-history'}
+        >
+          {tab === 'ranking' ? <Ranking config={config} /> : <History />}
+        </div>
+        <div className="menu-stack log-back">
+          <Button onClick={onMenu}>Main menu</Button>
+        </div>
       </div>
     </Panel>
   )

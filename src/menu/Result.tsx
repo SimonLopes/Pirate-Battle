@@ -52,7 +52,7 @@ export function Result({
           >
             {recordLabel(status)}
           </p>
-          <div className="menu-stack">
+          <div className="menu-stack result-actions">
             {failed && (
               <Button variant="secondary" onClick={onRetry}>
                 Retry

@@ -75,9 +75,26 @@ export function Options({
   }
 
   return (
-    <Panel>
+    <Panel
+      className="menu-panel-options"
+      actions={
+        <>
+          <Button id="options-back" variant="secondary" onClick={onBack}>
+            Back
+          </Button>
+          <Button id="options-save" type="submit" form="options-form">
+            Save
+          </Button>
+        </>
+      }
+    >
       <h1 className="menu-heading">Options</h1>
-      <form className="option-form" noValidate onSubmit={submit}>
+      <form
+        id="options-form"
+        className="option-form"
+        noValidate
+        onSubmit={submit}
+      >
         <div className="option-field">
           <label className="option-label" htmlFor="captain-name">
             Captain name
@@ -143,7 +160,6 @@ export function Options({
             <FullscreenButton />
           </div>
         </div>
-        <Button type="submit">Main menu</Button>
       </form>
     </Panel>
   )
