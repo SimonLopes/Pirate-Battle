@@ -3,7 +3,7 @@ import type { Ball } from '../core/ball.ts'
 import type { Enemy } from '../core/enemy.ts'
 import type { Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
-import { islands, sheetColumns, tileSize, waterTile } from '../map.ts'
+import { sheetColumns, tileSize, waterTile, type Island } from '../map.ts'
 import { loadAssets, type BarName, type GameAssets } from './assets.ts'
 import { createEffects, type Effects } from './effects.ts'
 
@@ -52,7 +52,10 @@ const flameSizes = [
   { w: 10, h: 22 },
 ]
 
-export function createRenderer(stage: Container): Renderer {
+export function createRenderer(
+  stage: Container,
+  islands: readonly Island[],
+): Renderer {
   const root = new Container()
   const arenaLayer = new Container()
   const shipsLayer = new Container()
@@ -89,7 +92,13 @@ export function createRenderer(stage: Container): Renderer {
       if (!ready) {
         if (!assets) return
         ready = true
-        paintArena(arenaLayer, assets.tiles, frames, world.config.arena)
+        paintArena(
+          arenaLayer,
+          assets.tiles,
+          frames,
+          world.config.arena,
+          islands,
+        )
         ballTexture = cannonBallTexture(assets.ships)
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
         enemyBars = enemyStyle(assets.bars)
@@ -138,6 +147,7 @@ function paintArena(
   sheet: Texture,
   frames: Map<number, Texture>,
   arena: { width: number; height: number },
+  islands: readonly Island[],
 ): void {
   const water = tileTexture(sheet, frames, waterTile)
   const scale = tileSize / water.frame.width

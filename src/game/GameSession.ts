@@ -1,6 +1,7 @@
 import { UPDATE_PRIORITY, type Application } from 'pixi.js'
 import type { GameConfig } from './config.ts'
 import { idleActions, type Actions } from './core/actions.ts'
+import { createRng } from './core/rng.ts'
 import {
   createWorld,
   pauseMatch,
@@ -15,7 +16,7 @@ import {
   type TouchBinding,
   type TouchBindings,
 } from './input/touch.ts'
-import { islands } from './map.ts'
+import { pickLayout } from './map.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 
 export class GameSession {
@@ -41,7 +42,9 @@ export class GameSession {
     config: GameConfig,
     hud: HudStore,
     adopt: (session: GameSession) => void,
+    seed = Date.now(),
   ) {
+    const islands = pickLayout(createRng(seed))
     this.app = app
     this.hud = hud
     this.adopt = adopt
@@ -52,7 +55,7 @@ export class GameSession {
     )
     this.actions = idleActions()
     this.touch = idleTouch()
-    this.renderer = createRenderer(app.stage)
+    this.renderer = createRenderer(app.stage, islands)
     document.addEventListener('visibilitychange', this.onHide)
     window.addEventListener('blur', this.onBlur)
   }
