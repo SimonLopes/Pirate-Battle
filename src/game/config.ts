@@ -42,6 +42,20 @@ export type GameConfig = {
     sideCooldown: number
     sideSpacing: number
   }
+  fx: {
+    trailLife: number
+    trailGap: number
+    trailPool: number
+    splashLife: number
+    splashRadius: number
+    splashPool: number
+    wreckHold: number
+    wreckPool: number
+    debrisLife: number
+    debrisSpeed: number
+    woodCount: number
+    crewCount: number
+  }
   arena: {
     width: number
     height: number
@@ -103,6 +117,20 @@ export const defaultConfig: GameConfig = {
     frontCooldown: 0.45,
     sideCooldown: 1.2,
     sideSpacing: 18,
+  },
+  fx: {
+    trailLife: 0.18,
+    trailGap: 14,
+    trailPool: 40,
+    splashLife: 0.4,
+    splashRadius: 18,
+    splashPool: 12,
+    wreckHold: 0.9,
+    wreckPool: 6,
+    debrisLife: 0.85,
+    debrisSpeed: 62,
+    woodCount: 4,
+    crewCount: 4,
   },
   arena: {
     width: 2048,

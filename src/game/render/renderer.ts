@@ -11,9 +11,10 @@ import type { Collider } from '../core/collider.ts'
 import type { Enemy } from '../core/enemy.ts'
 import { hullBody, type Ship } from '../core/ship.ts'
 import type { World } from '../core/world.ts'
-import { sheetColumns, tileSize, waterTile, type Island } from '../map.ts'
+import { tileSize, type Island } from '../map.ts'
 import { loadAssets, type BarName, type GameAssets } from './assets.ts'
 import { createEffects, type Effects } from './effects.ts'
+import { terrainCells } from './terrain.ts'
 
 export type Renderer = {
   draw(world: World, dt: number): void
@@ -74,6 +75,8 @@ type Ride = {
   dy: number
 }
 
+const sheetColumns = 16
+const waterTile = 73
 const playerHull = 1
 const chaserHull = 2
 const shooterHull = 3
@@ -115,6 +118,7 @@ export function createRenderer(
   const arenaLayer = new Container()
   const wakeLayer = new Container()
   const shipsLayer = new Container()
+  const trailLayer = new Container()
   const ballLayer = new Container()
   const effectLayer = new Container()
   const barLayer = new Container()
@@ -123,6 +127,7 @@ export function createRenderer(
     arenaLayer,
     wakeLayer,
     shipsLayer,
+    trailLayer,
     ballLayer,
     effectLayer,
     barLayer,
@@ -178,7 +183,14 @@ export function createRenderer(
         ballTexture = cannonBallTexture(assets.ships)
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
         enemyBars = enemyStyle(assets.bars)
-        fx = createEffects(effectLayer, assets.effects)
+        fx = createEffects(
+          effectLayer,
+          trailLayer,
+          wakeLayer,
+          shipsLayer,
+          assets.effects,
+          assets.ships,
+        )
         fx.prime(world)
       }
       if (!assets || !playerMark || !ballTexture || !enemyBars || !fx) return
@@ -246,27 +258,42 @@ function paintArena(
     height: arena.height,
     tileScale: { x: scale, y: scale },
   })
-  root.addChild(water)
-
-  for (const island of islands) {
-    const grid = new Container()
-    grid.position.set(island.x, island.y)
-    let y = 0
-    for (const row of island.tiles) {
-      let x = 0
-      for (const id of row) {
-        const sprite = new Sprite(tileTexture(sheet, frames, id))
-        sprite.position.set(x * tileSize, y * tileSize)
-        sprite.width = tileSize
-        sprite.height = tileSize
-        grid.addChild(sprite)
-        x += 1
-      }
-      y += 1
-    }
-    root.addChild(grid)
+  const ground = new Container()
+  root.addChild(water, ground)
+  const cols = Math.floor(arena.width / tileSize)
+  const rows = Math.floor(arena.height / tileSize)
+  for (const cell of terrainCells(islands, cols, rows)) {
+    putTile(ground, sheet, frames, cell.x, cell.y, cell.id)
   }
+  for (const island of islands) {
+    for (const decor of island.decor) {
+      putTile(
+        ground,
+        sheet,
+        frames,
+        island.x + decor.x,
+        island.y + decor.y,
+        decor.id,
+      )
+    }
+  }
+  ground.cacheAsTexture(true)
   return water
+}
+
+function putTile(
+  root: Container,
+  sheet: Texture,
+  frames: Map<number, Texture>,
+  x: number,
+  y: number,
+  id: number,
+): void {
+  const sprite = new Sprite(tileTexture(sheet, frames, id))
+  sprite.position.set(x * tileSize, y * tileSize)
+  sprite.width = tileSize
+  sprite.height = tileSize
+  root.addChild(sprite)
 }
 
 function playerStyle(bars: Record<BarName, Texture>): BarStyle {
@@ -340,6 +367,10 @@ function placeMark(
   fx: Effects,
   sea: Sea,
 ): void {
+  if (ship.hp <= 0) {
+    hideMark(mark)
+    return
+  }
   const ratio = maxHp > 0 ? Math.min(1, Math.max(0, ship.hp / maxHp)) : 0
   const ride = rideOf(sea, ship)
   mark.hull.visible = true
