@@ -36,6 +36,7 @@ type BarStyle = {
 }
 
 type ShipMark = {
+  view: Container
   hull: Sprite
   flames: Sprite[]
   bar: Container
@@ -253,8 +254,8 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
       layWater()
     },
     playerBox() {
-      if (destroyed || !playerMark?.hull.visible) return null
-      const hull = playerMark.hull
+      if (destroyed || !playerMark?.view.visible) return null
+      const { view, hull } = playerMark
       const width = hull.texture.width
       const height = hull.texture.height
       if (width < 1 || height < 1) return null
@@ -264,12 +265,12 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
       if (scale <= 0) return null
       const halfW = width / 2
       const halfH = height / 2
-      const c = Math.abs(Math.cos(hull.rotation))
-      const s = Math.abs(Math.sin(hull.rotation))
+      const c = Math.abs(Math.cos(view.rotation))
+      const s = Math.abs(Math.sin(view.rotation))
       const spanW = (c * halfW + s * halfH) * 2 * scale
       const spanH = (s * halfW + c * halfH) * 2 * scale
-      const x = stage.position.x + hull.position.x * scale
-      const y = stage.position.y + hull.position.y * scale
+      const x = stage.position.x + view.position.x * scale
+      const y = stage.position.y + view.position.y * scale
       return { x: x - spanW / 2, y: y - spanH / 2, w: spanW, h: spanH }
     },
     destroy() {
@@ -396,17 +397,19 @@ function createMark(
   bars: Container,
   style: BarStyle,
 ): ShipMark {
+  const view = new Container()
   const hull = new Sprite()
   hull.anchor.set(0.5)
+  view.addChild(hull)
   const flames = flameSpots.map((spot) => {
     const flame = new Sprite()
     flame.anchor.set(0.5, 1)
     flame.position.set(spot.x, spot.y)
     flame.visible = false
-    hull.addChild(flame)
+    view.addChild(flame)
     return flame
   })
-  ships.addChild(hull)
+  ships.addChild(view)
 
   const crop = new Texture({
     source: style.green.source,
@@ -419,7 +422,7 @@ function createMark(
   bar.addChild(frame, fill)
   bar.scale.set(style.width / style.frame.width)
   bars.addChild(bar)
-  return { hull, flames, bar, fill, crop, style }
+  return { view, hull, flames, bar, fill, crop, style }
 }
 
 function placeMark(
@@ -438,12 +441,12 @@ function placeMark(
   }
   const ratio = maxHp > 0 ? Math.min(1, Math.max(0, ship.hp / maxHp)) : 0
   const ride = rideOf(sea, ship)
-  mark.hull.visible = true
+  mark.view.visible = true
   mark.bar.visible = true
   mark.hull.texture = hullTexture(sheet, hullBase, ratio)
   mark.hull.tint = fx.tint(ship)
-  mark.hull.position.set(ship.x, ship.y + ride.bob)
-  mark.hull.rotation = ship.heading - artBow + ride.tilt
+  mark.view.position.set(ship.x, ship.y + ride.bob)
+  mark.view.rotation = ship.heading - artBow + ride.tilt
   layWake(sea, ship, ride)
   placeFlames(mark, ratio > 0 && ratio <= wornAbove, fx.flameFrame(), effects)
   const texW = mark.style.frame.width
@@ -532,7 +535,7 @@ function placeFlames(
 }
 
 function hideMark(mark: ShipMark): void {
-  mark.hull.visible = false
+  mark.view.visible = false
   mark.hull.tint = 0xffffff
   mark.bar.visible = false
   for (const flame of mark.flames) flame.visible = false
