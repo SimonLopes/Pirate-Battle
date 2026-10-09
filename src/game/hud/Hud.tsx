@@ -5,7 +5,6 @@ import {
   type Ref,
 } from 'react'
 import { Button } from '../../ui/Button.tsx'
-import { Controls } from '../../ui/Controls.tsx'
 import { FullscreenButton } from '../../ui/FullscreenButton.tsx'
 import { Panel } from '../../ui/Panel.tsx'
 import { useDialog } from '../../ui/useDialog.ts'
