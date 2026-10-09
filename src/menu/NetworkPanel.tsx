@@ -50,14 +50,14 @@ export function NetworkPanel() {
 
   return (
     <details className="network-debug">
-      <summary className="step-button network-toggle">
+      <summary className="network-toggle">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <path
             d="M4 26h4v-4H4zM11 26h4v-9h-4zM18 26h4V12h-4zM25 26h4V6h-4z"
             fill="currentColor"
           />
         </svg>
-        <span className="sr-only">Network debug</span>
+        <span className="network-label">Network debug</span>
       </summary>
       <div className="network-fields">
         <label htmlFor="network-scenario">Scenario</label>
