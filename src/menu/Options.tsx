@@ -65,7 +65,7 @@ export function Options({
       fullscreenOnMobile,
     }
     if (!onSave(next)) {
-      setSaveError('Não foi possível salvar as opções.')
+      setSaveError('Could not save the options.')
       return
     }
     onBack()
@@ -73,11 +73,11 @@ export function Options({
 
   return (
     <Panel>
-      <h1 className="menu-heading">Opções</h1>
+      <h1 className="menu-heading">Options</h1>
       <form className="option-form" noValidate onSubmit={submit}>
         <TimeField
           id="session-time"
-          label="Tempo da partida"
+          label="Game session time"
           value={sessionTime}
           error={sessionError}
           limits={sessionDurationLimits}
@@ -91,7 +91,7 @@ export function Options({
         />
         <TimeField
           id="spawn-time"
-          label="Tempo de surgimento dos inimigos"
+          label="Enemy spawn time"
           value={spawnTime}
           error={spawnError}
           limits={spawnIntervalLimits}
@@ -104,7 +104,7 @@ export function Options({
         />
         <div className="option-field">
           <label className="option-label" htmlFor="fullscreen-mobile">
-            Tela cheia no celular
+            Fullscreen on mobile
           </label>
           <div className="option-row">
             <input
@@ -122,7 +122,7 @@ export function Options({
             {saveError}
           </p>
         )}
-        <Button type="submit">Menu principal</Button>
+        <Button type="submit">Main menu</Button>
       </form>
     </Panel>
   )
@@ -157,12 +157,12 @@ function TimeField({
     <div className="option-field">
       <label className="option-label" htmlFor={id}>
         {label}
-        <span className="sr-only"> em segundos</span>
+        <span className="sr-only"> in seconds</span>
       </label>
       <div className="option-row">
         <StepButton
           icon={minusArt}
-          label={`Diminuir ${name}`}
+          label={`Decrease ${name}`}
           disabled={atMin}
           onClick={() => onChange(stepSeconds(value, -step, limits))}
         />
@@ -183,7 +183,7 @@ function TimeField({
         </span>
         <StepButton
           icon={plusArt}
-          label={`Aumentar ${name}`}
+          label={`Increase ${name}`}
           disabled={atMax}
           onClick={() => onChange(stepSeconds(value, step, limits))}
         />

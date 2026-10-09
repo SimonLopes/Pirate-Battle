@@ -1,9 +1,9 @@
-# Dificuldade
+# Difficulty
 
-A partida dura 120 segundos. O jogador tem 100 de vida e é o casco mais rápido, 180 px/s. Cada bala tira 10, então são 10 acertos pra morrer. O canhão da frente recarrega em 0,45 s. O lateral recarrega em 1,2 s e solta três balas.
+A match lasts 120 seconds. The player has 100 HP and the fastest hull, 180 px/s. Each ball deals 10, so it takes 10 hits to die. The front cannon reloads in 0.45 s. The side cannons reload in 1.2 s and fire three balls.
 
-O chaser tem 30 de vida, morre em três tiros. Anda a 150 e vira a 2,4 rad/s, um pouco mais fechado que o jogador. Se encosta, tira 25 e some. Não dá ponto. Quatro choques acabam a partida.
+The chaser has 30 HP and dies in three shots. It moves at 150 and turns at 2.4 rad/s, a bit tighter than the player. If it rams the player, it deals 25 and disappears. It gives no points. Four rams end the match.
 
-O shooter tem 40 de vida, quatro tiros. É o mais lento, 110 px/s, e para pra atirar dentro de 360. O cooldown dele é 1,5 s. O spawn fica a pelo menos 520 do jogador, então ele não nasce já no alcance.
+The shooter has 40 HP, four shots. It is the slowest, 110 px/s, and stops to fire within 360. Its cooldown is 1.5 s. Enemies spawn at least 520 away from the player, so a shooter never spawns already in range.
 
-A partida começa com um de cada. Depois disso entra um navio a cada 3 segundos, metade chaser e metade shooter. A rampa está ligada: esse intervalo desce até 1 segundo no fim dos 120. O inimigo não fica mais forte. O que sobe é a quantidade.
+The match starts with one of each. After that a ship comes in every 3 seconds, half chasers and half shooters. The ramp is on: that interval drops to 1 second by the end of the 120. Enemies do not get stronger. What goes up is the count.

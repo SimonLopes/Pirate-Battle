@@ -90,7 +90,7 @@ export class GameSession {
     this.app.ticker.add(this.onTick, undefined, UPDATE_PRIORITY.HIGH)
     this.app.ticker.start()
     this.publish()
-    this.hud.announce('Partida iniciada')
+    this.hud.announce('Match started')
     if (document.hidden) this.pause()
   }
 
@@ -104,7 +104,7 @@ export class GameSession {
     this.keyboard?.clear()
     this.app.ticker.stop()
     this.publish()
-    this.hud.announce('Pausado')
+    this.hud.announce('Paused')
   }
 
   resume(): void {
@@ -230,7 +230,7 @@ export class GameSession {
     this.publishStick()
     if (this.endAnnounced || this.world.status !== 'ended') return
     this.endAnnounced = true
-    this.hud.announce('Partida encerrada')
+    this.hud.announce('Match over')
   }
 
   private publish(): void {

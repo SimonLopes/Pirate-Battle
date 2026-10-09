@@ -87,18 +87,18 @@ function Home({
         <h1 className="menu-title">
           <img src={titleArt} alt="Pirate Battle" draggable={false} />
         </h1>
-        <p className="menu-tagline">Veleje. Assuma o comando.</p>
+        <p className="menu-tagline">Set sail. Take command.</p>
         <div className="menu-stack">
           <Button id="menu-play" onClick={onPlay}>
-            Jogar
+            Play
           </Button>
           <Button id="menu-options" variant="secondary" onClick={onOptions}>
-            Opções
+            Options
           </Button>
         </div>
         <img className="menu-mark" src={shipArt} alt="" draggable={false} />
         <p className="menu-tagline">
-          Navegue pelas ilhas. Sobreviva à batalha.
+          Navigate the islands. Survive the battle.
         </p>
         <Tabs tab={null} onTab={onTab} />
         <div className="menu-stack menu-help">
@@ -108,7 +108,7 @@ function Home({
             variant="secondary"
             onClick={() => setHelp(true)}
           >
-            Como jogar
+            How to play
           </Button>
         </div>
         <NetworkPanel />
@@ -134,11 +134,11 @@ function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
       >
         <Panel>
           <h2 id="help-title" className="menu-heading" tabIndex={-1}>
-            Como jogar
+            How to play
           </h2>
           <Controls />
           <div className="menu-stack">
-            <Button onClick={onClose}>Fechar</Button>
+            <Button onClick={onClose}>Close</Button>
           </div>
         </Panel>
       </div>
@@ -159,7 +159,7 @@ function Log({
 }) {
   return (
     <Panel wide>
-      <h1 className="menu-heading">Diário do capitão</h1>
+      <h1 className="menu-heading">Captain's log</h1>
       <Tabs tab={tab} onTab={onTab} />
       <div
         role="tabpanel"
@@ -169,7 +169,7 @@ function Log({
         {tab === 'ranking' ? <Ranking config={config} /> : <History />}
       </div>
       <div className="menu-stack">
-        <Button onClick={onMenu}>Menu principal</Button>
+        <Button onClick={onMenu}>Main menu</Button>
       </div>
     </Panel>
   )
@@ -193,7 +193,7 @@ function Tabs({
     <div
       className="menu-tabs"
       role="tablist"
-      aria-label="Registros"
+      aria-label="Records"
       onKeyDown={onKey}
     >
       <Button
@@ -206,7 +206,7 @@ function Tabs({
         aria-controls="panel-ranking"
         onClick={() => onTab('ranking')}
       >
-        Classificação
+        Ranking
       </Button>
       <Button
         id="tab-history"
@@ -218,7 +218,7 @@ function Tabs({
         aria-controls="panel-history"
         onClick={() => onTab('history')}
       >
-        Histórico
+        Match History
       </Button>
     </div>
   )

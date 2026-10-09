@@ -1,9 +1,9 @@
 type ControlMode = 'all' | 'keyboard' | 'touch'
 
 function controlHeading(mode: ControlMode): string {
-  if (mode === 'keyboard') return 'Teclado'
-  if (mode === 'touch') return 'Toque'
-  return 'Controles'
+  if (mode === 'keyboard') return 'Keyboard'
+  if (mode === 'touch') return 'Touch'
+  return 'Controls'
 }
 
 export function Controls({
@@ -22,39 +22,39 @@ export function Controls({
       <div className="controls-grid">
         {mode !== 'touch' && (
           <div>
-            {mode === 'all' && <h3>Teclado</h3>}
+            {mode === 'all' && <h3>Keyboard</h3>}
             <ul>
               <li>
-                <kbd>W</kbd> <kbd>↑</kbd> Avançar
+                <kbd>W</kbd> <kbd>↑</kbd> Forward
               </li>
               <li>
-                <kbd>S</kbd> <kbd>↓</kbd> Ré
+                <kbd>S</kbd> <kbd>↓</kbd> Reverse
               </li>
               <li>
-                <kbd>A</kbd> <kbd>←</kbd> Virar à esquerda
+                <kbd>A</kbd> <kbd>←</kbd> Turn left
               </li>
               <li>
-                <kbd>D</kbd> <kbd>→</kbd> Virar à direita
+                <kbd>D</kbd> <kbd>→</kbd> Turn right
               </li>
               <li>
-                <kbd>Espaço</kbd> Tiro frontal
+                <kbd>Space</kbd> Fire forward
               </li>
               <li>
-                <kbd>Q</kbd> <kbd>E</kbd> Tiro à esquerda e à direita
+                <kbd>Q</kbd> <kbd>E</kbd> Fire left and right
               </li>
               <li>
-                <kbd>Esc</kbd> <kbd>P</kbd> Pausar
+                <kbd>Esc</kbd> <kbd>P</kbd> Pause
               </li>
             </ul>
           </div>
         )}
         {mode !== 'keyboard' && (
           <div>
-            {mode === 'all' && <h3>Toque</h3>}
+            {mode === 'all' && <h3>Touch</h3>}
             <ul>
-              <li>Direcional — navegar e virar</li>
-              <li>Botões de tiro — frente, esquerda e direita</li>
-              <li>Pausar — interrompe a partida</li>
+              <li>Joystick — sail and turn</li>
+              <li>Fire buttons — forward, left and right</li>
+              <li>Pause — stops the match</li>
             </ul>
           </div>
         )}

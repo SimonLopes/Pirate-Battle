@@ -144,10 +144,10 @@ function HudScore({
 
   return (
     <div ref={barRef} style={scoreboard} inert={view.status === 'paused'}>
-      <Counter icon={scoreArt} label="Pontuação ">
+      <Counter icon={scoreArt} label="Score ">
         {view.score}
       </Counter>
-      <Counter icon={timeArt} label="Tempo restante ">
+      <Counter icon={timeArt} label="Time left ">
         <time dateTime={`PT${view.secondsLeft}S`}>
           {clock(view.secondsLeft)}
         </time>
@@ -224,16 +224,16 @@ function PauseDialog({
       >
         <Panel>
           <h2 id="pause-title" className="menu-heading" tabIndex={-1}>
-            Pausado
+            Paused
           </h2>
           <p id="pause-hint" className="menu-copy">
-            Retome quando quiser.
+            Ready when you are.
           </p>
           
           <div className="menu-stack">
-            <Button onClick={onResume}>Continuar</Button>
+            <Button onClick={onResume}>Resume</Button>
             <Button variant="secondary" onClick={onMenu}>
-              Menu principal
+              Main menu
             </Button>
           </div>
         </Panel>

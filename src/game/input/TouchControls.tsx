@@ -36,17 +36,17 @@ const pads: {
 }[] = [
   {
     binding: 'fireFront',
-    label: 'Tiro frontal',
+    label: 'Fire forward',
     icon: `${art}/icon_fire_front.png`,
   },
   {
     binding: 'fireLeft',
-    label: 'Tiro à esquerda',
+    label: 'Fire left',
     icon: `${art}/icon_fire_left.png`,
   },
   {
     binding: 'fireRight',
-    label: 'Tiro à direita',
+    label: 'Fire right',
     icon: `${art}/icon_fire_right.png`,
   },
 ]
@@ -77,7 +77,7 @@ export function TouchControls({
   return (
     <div
       role="group"
-      aria-label="Controles de toque"
+      aria-label="Touch controls"
       inert={!running}
       style={overlay}
     >
@@ -206,7 +206,7 @@ function Joystick({
     <div
       ref={wellRef}
       role="group"
-      aria-label="Direcional"
+      aria-label="Joystick"
       onPointerDown={press}
       onPointerMove={move}
       onPointerUp={release}
@@ -338,7 +338,7 @@ function PauseButton({
   return (
     <button
       type="button"
-      aria-label="Pausar"
+      aria-label="Pause"
       onClick={() => {
         if (!running) return
         sessionRef.current?.pause()

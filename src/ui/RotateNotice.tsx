@@ -16,9 +16,9 @@ export function RotateNotice() {
   return (
     <div ref={ref} className="rotate-gate" role="status" tabIndex={-1}>
       <h1 id="rotate-title" className="menu-heading">
-        Gire o aparelho
+        Rotate your device
       </h1>
-      <p className="menu-copy">O jogo é jogado na horizontal.</p>
+      <p className="menu-copy">The game is played in landscape.</p>
     </div>
   )
 }

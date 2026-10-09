@@ -9,7 +9,7 @@ import {
 export function FullscreenButton({ className = '' }: { className?: string }) {
   const active = useFullscreen()
   if (!canFullscreen()) return null
-  const label = active ? 'Sair da tela cheia' : 'Entrar em tela cheia'
+  const label = active ? 'Exit fullscreen' : 'Enter fullscreen'
   return (
     <button
       type="button"

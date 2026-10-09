@@ -47,7 +47,7 @@ export function GameCanvas({
     setPlaying(true)
   }, [])
   const failStart = useCallback(() => {
-    setError('Não foi possível iniciar a partida.')
+    setError('Could not start the match.')
   }, [])
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export function GameCanvas({
       },
       () => {
         if (!alive) return
-        setError('Não foi possível carregar os recursos da partida.')
+        setError('Could not load the game assets.')
       },
     )
     return () => {
@@ -281,7 +281,7 @@ function LoadScreen({
     >
       <Panel>
         <h1 id="load-title" className="menu-heading">
-          {error ? 'Falha ao carregar' : 'Carregando'}
+          {error ? 'Loading failed' : 'Loading'}
         </h1>
         {error ? (
           <div className="menu-stack">
@@ -293,7 +293,7 @@ function LoadScreen({
               aria-describedby="asset-error"
               onClick={onRetry}
             >
-              Tentar de novo
+              Retry
             </Button>
           </div>
         ) : (

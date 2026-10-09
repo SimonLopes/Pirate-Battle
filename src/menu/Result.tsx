@@ -17,7 +17,7 @@ export function Result({
   onPlay: () => void
   onMenu: () => void
 }) {
-  const reason = result.reason === 'time' ? 'Tempo esgotado' : 'Derrota'
+  const reason = result.reason === 'time' ? 'Time up' : 'Defeated'
   const dialogRef = useDialog(true, onMenu)
   const failed = status === 'failed'
 
@@ -33,14 +33,14 @@ export function Result({
       >
         <Panel>
           <h1 id="result-title" className="menu-heading">
-            Batalha encerrada
+            Battle complete
           </h1>
           <p className="menu-score">
-            <span className="sr-only">Pontuação </span>
+            <span className="sr-only">Score </span>
             {result.score}
           </p>
           <p id="result-summary" className="result-summary">
-            Pontos · <span className="sr-only">Tempo </span>
+            Points · <span className="sr-only">Time </span>
             <time dateTime={span(result.played)}>
               {clock(result.played)}
             </time> · {reason}
@@ -58,8 +58,8 @@ export function Result({
                 Retry
               </Button>
             )}
-            <Button onClick={onPlay}>Jogar de novo</Button>
-            <Button onClick={onMenu}>Menu principal</Button>
+            <Button onClick={onPlay}>Play again</Button>
+            <Button onClick={onMenu}>Main menu</Button>
           </div>
         </Panel>
       </div>

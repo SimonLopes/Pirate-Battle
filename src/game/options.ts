@@ -94,7 +94,7 @@ function rangeError(
 ): string | null {
   const value = wholeSeconds(text)
   if (value === null || value < limits.min || value > limits.max) {
-    return `Informe um número inteiro de segundos de ${limits.min} a ${limits.max}.`
+    return `Enter a whole number of seconds from ${limits.min} to ${limits.max}.`
   }
   return null
 }
