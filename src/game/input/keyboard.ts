@@ -33,6 +33,10 @@ const bindings: Record<string, Binding> = {
   KeyP: 'pause',
 }
 
+export function isGameKey(code: string): boolean {
+  return Object.prototype.hasOwnProperty.call(bindings, code)
+}
+
 export function createKeyboard(
   actions: Actions,
   touch: TouchBindings,

@@ -5,6 +5,7 @@ export type HudView = {
   hp: number
   secondsLeft: number
   status: MatchStatus
+  onStick: boolean
 }
 
 export type HudStore = {
@@ -17,6 +18,7 @@ export type HudStore = {
     secondsLeft: number,
     status: MatchStatus,
   ) => void
+  setOnStick: (onStick: boolean) => void
   announce: (text: string) => void
 }
 
@@ -47,7 +49,12 @@ export function createHudStore(view: HudView): HudStore {
       ) {
         return
       }
-      current = { score, hp, secondsLeft, status }
+      current = { ...current, score, hp, secondsLeft, status }
+      emit()
+    },
+    setOnStick(onStick) {
+      if (current.onStick === onStick) return
+      current = { ...current, onStick }
       emit()
     },
     announce(text) {

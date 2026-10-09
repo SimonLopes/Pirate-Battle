@@ -10,21 +10,30 @@ const storageKey = 'pirate-battle.options'
 export type PlayerOptions = {
   sessionDuration: number
   spawnInterval: number
+  fullscreenOnMobile: boolean
+}
+
+type StoredOptions = {
+  sessionDuration: number
+  spawnInterval: number
+  fullscreenOnMobile?: boolean
 }
 
 export function loadOptions(): PlayerOptions {
   const fallback = {
     sessionDuration: defaultConfig.sessionDuration,
     spawnInterval: defaultConfig.spawnInterval,
+    fullscreenOnMobile: true,
   }
   try {
     const raw = localStorage.getItem(storageKey)
     if (!raw) return fallback
     const parsed: unknown = JSON.parse(raw)
-    if (!isPlayerOptions(parsed)) return fallback
+    if (!isStoredOptions(parsed)) return fallback
     return {
       sessionDuration: parsed.sessionDuration,
       spawnInterval: parsed.spawnInterval,
+      fullscreenOnMobile: parsed.fullscreenOnMobile ?? true,
     }
   } catch {
     return fallback
@@ -90,12 +99,12 @@ function rangeError(
   return null
 }
 
-function isPlayerOptions(value: unknown): value is PlayerOptions {
+function isStoredOptions(value: unknown): value is StoredOptions {
   if (!isRecord(value)) return false
-  return (
-    fits(value.sessionDuration, sessionDurationLimits) &&
-    fits(value.spawnInterval, spawnIntervalLimits)
-  )
+  if (!fits(value.sessionDuration, sessionDurationLimits)) return false
+  if (!fits(value.spawnInterval, spawnIntervalLimits)) return false
+  const flag = value.fullscreenOnMobile
+  return flag === undefined || typeof flag === 'boolean'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -20,7 +20,6 @@ export type TouchBinding =
 export type TouchBindings = Record<TouchBinding, boolean>
 
 export type TouchLayout = {
-  insets: Insets
   stick: Box
   knob: number
   fireFront: Box
@@ -40,8 +39,6 @@ export type StickMove = {
   turnLeft: boolean
   turnRight: boolean
 }
-
-export const zeroInsets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }
 
 const preferred = 64
 const minimum = 44
@@ -91,16 +88,13 @@ export function stageFit(
   viewH: number,
   arenaW: number,
   arenaH: number,
-  inset: Insets,
 ): { scale: number; x: number; y: number } | null {
-  const availW = viewW - inset.left - inset.right
-  const availH = viewH - inset.top - inset.bottom
-  if (viewW <= 0 || viewH <= 0 || availW <= 0 || availH <= 0) return null
-  const scale = Math.min(availW / arenaW, availH / arenaH)
+  if (viewW <= 0 || viewH <= 0 || arenaW <= 0 || arenaH <= 0) return null
+  const scale = Math.min(viewW / arenaW, viewH / arenaH)
   return {
     scale,
-    x: inset.left + (availW - arenaW * scale) / 2,
-    y: inset.top + (availH - arenaH * scale) / 2,
+    x: (viewW - arenaW * scale) / 2,
+    y: (viewH - arenaH * scale) / 2,
   }
 }
 
@@ -109,17 +103,15 @@ export function touchLayout(
   viewH: number,
   hudHeight: number,
   safe: Insets,
-  arena: { width: number; height: number },
 ): TouchLayout | null {
   if (viewW < 1 || viewH < 1 || hudHeight < 1) return null
-  if (arena.width < 1 || arena.height < 1) return null
   const sides = viewW > viewH
   let size = preferred
   while (size > minimum && !fits(sides, size, viewW, viewH, hudHeight, safe)) {
     size -= 2
   }
-  if (sides) return sideLayout(size, viewW, viewH, hudHeight, safe, arena)
-  return bottomLayout(size, viewW, viewH, hudHeight, safe, arena)
+  if (sides) return sideLayout(size, viewW, viewH, hudHeight, safe)
+  return bottomLayout(size, viewW, viewH, hudHeight, safe)
 }
 
 function fits(
@@ -152,7 +144,6 @@ function sideLayout(
   viewH: number,
   hudHeight: number,
   safe: Insets,
-  arena: { width: number; height: number },
 ): TouchLayout {
   const well = stickWell(size)
   const rightH = size * 4 + gap * 3
@@ -163,17 +154,8 @@ function sideLayout(
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - size
   const yStick = yRight + rightH - well
-  const leftLimit = leftX + well + pad
-  const rightLimit = rightX - pad
-  const natural = arenaBox(viewW, viewH, arena, zeroInsets)
-  const insets = { ...zeroInsets }
-  if (natural.x < leftLimit || natural.x + natural.w > rightLimit) {
-    insets.left = leftLimit
-    insets.right = viewW - rightLimit
-  }
   const step = size + gap
   return {
-    insets,
     stick: { x: leftX, y: yStick, w: well, h: well },
     knob: size,
     pause: { x: rightX, y: yRight, w: size, h: size },
@@ -189,7 +171,6 @@ function bottomLayout(
   viewH: number,
   hudHeight: number,
   safe: Insets,
-  arena: { width: number; height: number },
 ): TouchLayout {
   const well = stickWell(size)
   const rowW = size * 3 + gap * 2
@@ -200,12 +181,7 @@ function bottomLayout(
   const y = pauseY + size + gap
   const leftX = Math.max(safe.left, edge)
   const rightX = viewW - Math.max(safe.right, edge) - rowW
-  const limit = pauseY - pad
-  const natural = arenaBox(viewW, viewH, arena, zeroInsets)
-  const insets = { ...zeroInsets }
-  if (natural.y + natural.h > limit) insets.bottom = viewH - limit
   return {
-    insets,
     stick: { x: leftX, y: pauseY, w: well, h: well },
     knob: size,
     pause: {
@@ -217,21 +193,5 @@ function bottomLayout(
     fireLeft: { x: rightX, y, w: size, h: size },
     fireFront: { x: rightX + size + gap, y, w: size, h: size },
     fireRight: { x: rightX + (size + gap) * 2, y, w: size, h: size },
-  }
-}
-
-function arenaBox(
-  viewW: number,
-  viewH: number,
-  arena: { width: number; height: number },
-  inset: Insets,
-): Box {
-  const fit = stageFit(viewW, viewH, arena.width, arena.height, inset)
-  if (!fit) return { x: 0, y: 0, w: 0, h: 0 }
-  return {
-    x: fit.x,
-    y: fit.y,
-    w: arena.width * fit.scale,
-    h: arena.height * fit.scale,
   }
 }

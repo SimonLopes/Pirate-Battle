@@ -5,6 +5,8 @@ import {
   type Ref,
 } from 'react'
 import { Button } from '../../ui/Button.tsx'
+import { Controls } from '../../ui/Controls.tsx'
+import { FullscreenButton } from '../../ui/FullscreenButton.tsx'
 import { Panel } from '../../ui/Panel.tsx'
 import { useDialog } from '../../ui/useDialog.ts'
 import type { HudStore } from './store.ts'
@@ -17,6 +19,7 @@ const timeArt = `${hudArt}/icon_time.png`
 const panelW = 160
 const panelH = 56
 const hudIconArt = 48
+const plateOpacity = 0.7
 
 const scoreboard: CSSProperties = {
   position: 'absolute',
@@ -45,15 +48,25 @@ const counter: CSSProperties = {
   width: `min(${panelW}px, calc(50% - 8px))`,
   aspectRatio: `${panelW} / ${panelH}`,
   margin: 0,
+  background: 'transparent',
+  containerType: 'inline-size',
+}
+
+const counterPlate: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
   backgroundColor: 'transparent',
   backgroundImage: `url(${panelArt})`,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'center',
   backgroundSize: '100% 100%',
-  containerType: 'inline-size',
+  opacity: plateOpacity,
+  pointerEvents: 'none',
 }
 
 const counterRow: CSSProperties = {
+  position: 'relative',
+  zIndex: 1,
   display: 'flex',
   alignItems: 'center',
   boxSizing: 'border-box',
@@ -132,14 +145,15 @@ function HudScore({
 
   return (
     <div ref={barRef} style={scoreboard} inert={view.status === 'paused'}>
-      <Counter icon={scoreArt} label="Score ">
+      <Counter icon={scoreArt} label="Pontuação ">
         {view.score}
       </Counter>
-      <Counter icon={timeArt} label="Time left ">
+      <Counter icon={timeArt} label="Tempo restante ">
         <time dateTime={`PT${view.secondsLeft}S`}>
           {clock(view.secondsLeft)}
         </time>
       </Counter>
+      <FullscreenButton className="hud-fullscreen" />
     </div>
   )
 }
@@ -155,6 +169,7 @@ function Counter({
 }) {
   return (
     <p style={counter}>
+      <span aria-hidden="true" style={counterPlate} />
       <span style={counterRow}>
         <img src={icon} alt="" draggable={false} style={counterIcon} />
         <span style={hidden}>{label}</span>
@@ -209,12 +224,13 @@ function PauseDialog({
         aria-describedby="pause-hint"
       >
         <Panel>
-          <h2 id="pause-title" className="menu-heading">
+          <h2 id="pause-title" className="menu-heading" tabIndex={-1}>
             Pausado
           </h2>
           <p id="pause-hint" className="menu-copy">
             Retome quando quiser.
           </p>
+          <Controls />
           <div className="menu-stack">
             <Button onClick={onResume}>Continuar</Button>
             <Button variant="secondary" onClick={onMenu}>

@@ -17,6 +17,8 @@ import { createEffects, type Effects } from './effects.ts'
 
 export type Renderer = {
   draw(world: World, dt: number): void
+  cover(viewW: number, viewH: number): void
+  playerBox(): { x: number; y: number; w: number; h: number } | null
   destroy(): void
 }
 
@@ -108,6 +110,7 @@ const debugStroke = { width: 1, color: 0x7dff6a, pixelLine: true }
 
 export function createRenderer(stage: Container, debug: boolean): Renderer {
   const root = new Container()
+  const seaLayer = new Container()
   const arenaLayer = new Container()
   const wakeLayer = new Container()
   const shipsLayer = new Container()
@@ -117,6 +120,7 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
   const barLayer = new Container()
   const debugView = debug ? new Graphics() : null
   root.addChild(
+    seaLayer,
     arenaLayer,
     wakeLayer,
     shipsLayer,
@@ -142,6 +146,10 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
   }
   let destroyed = false
   let ready = false
+  let water: TilingSprite | null = null
+  let waterSize = 0
+  let viewW = 0
+  let viewH = 0
   let assets: GameAssets | null = null
   let ballTexture: Texture | null = null
   let playerMark: ShipMark | null = null
@@ -158,6 +166,24 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
     },
   )
 
+  function layWater() {
+    if (!water || waterSize <= 0 || viewW <= 0 || viewH <= 0) return
+    const stage = root.parent
+    if (!stage) return
+    const scale = stage.scale.x
+    if (scale <= 0) return
+    const originX = -stage.position.x / scale
+    const originY = -stage.position.y / scale
+    const tile = waterSize
+    const x = Math.floor(originX / tile) * tile - tile
+    const y = Math.floor(originY / tile) * tile - tile
+    const right = originX + viewW / scale + tile
+    const bottom = originY + viewH / scale + tile
+    water.position.set(x, y)
+    water.width = Math.ceil((right - x) / tile) * tile
+    water.height = Math.ceil((bottom - y) / tile) * tile
+  }
+
   return {
     draw(world, dt) {
       if (destroyed) return
@@ -165,6 +191,17 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
       if (!ready) {
         if (!assets) return
         ready = true
+        const tile = tileTexture(assets.tiles, frames, waterTile)
+        const tileScale = assets.arena.tileSize / tile.frame.width
+        waterSize = assets.arena.tileSize
+        water = new TilingSprite({
+          texture: tile,
+          width: waterSize,
+          height: waterSize,
+          tileScale: { x: tileScale, y: tileScale },
+        })
+        seaLayer.addChild(water)
+        layWater()
         paintArena(arenaLayer, assets.tiles, frames, assets.arena)
         ballTexture = cannonBallTexture(assets.ships)
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
@@ -208,6 +245,32 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
       )
       placeBalls(ballLayer, ballTexture, ballSprites, world.balls)
       dropTrails(sea)
+      layWater()
+    },
+    cover(nextW, nextH) {
+      viewW = nextW
+      viewH = nextH
+      layWater()
+    },
+    playerBox() {
+      if (destroyed || !playerMark?.hull.visible) return null
+      const hull = playerMark.hull
+      const width = hull.texture.width
+      const height = hull.texture.height
+      if (width < 1 || height < 1) return null
+      const stage = root.parent
+      if (!stage) return null
+      const scale = stage.scale.x
+      if (scale <= 0) return null
+      const halfW = width / 2
+      const halfH = height / 2
+      const c = Math.abs(Math.cos(hull.rotation))
+      const s = Math.abs(Math.sin(hull.rotation))
+      const spanW = (c * halfW + s * halfH) * 2 * scale
+      const spanH = (s * halfW + c * halfH) * 2 * scale
+      const x = stage.position.x + hull.position.x * scale
+      const y = stage.position.y + hull.position.y * scale
+      return { x: x - spanW / 2, y: y - spanH / 2, w: spanW, h: spanH }
     },
     destroy() {
       if (destroyed) return

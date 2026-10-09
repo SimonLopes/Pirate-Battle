@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { enterFullscreenOnTouch } from './game/fullscreen.ts'
 import {
   configFromOptions,
   loadOptions,
@@ -33,6 +34,7 @@ function App() {
   }, [screen])
 
   const play = () => {
+    enterFullscreenOnTouch(options.fullscreenOnMobile)
     setMatchConfig(configFromOptions(options))
     setScreen('game')
   }

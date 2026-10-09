@@ -5,11 +5,8 @@ import {
   useSyncExternalStore,
   type RefObject,
 } from 'react'
-import {
-  touchLayout,
-  type Insets,
-  type TouchLayout,
-} from './touch.ts'
+import { listenFullscreen } from '../fullscreen.ts'
+import { touchLayout, type Insets, type TouchLayout } from './touch.ts'
 
 type Frame = {
   w: number
@@ -34,7 +31,6 @@ const emptyFrame: Frame = {
 export function useTouchLayout(
   hostRef: RefObject<HTMLElement | null>,
   barRef: RefObject<HTMLElement | null>,
-  arena: { width: number; height: number },
 ): TouchLayout | null {
   const coarse = useCoarsePointer()
   const [frame, setFrame] = useState(emptyFrame)
@@ -64,20 +60,22 @@ export function useTouchLayout(
     observer.observe(bar)
     window.addEventListener('resize', update)
     window.addEventListener('orientationchange', update)
+    const stopFullscreen = listenFullscreen(update)
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', update)
       window.removeEventListener('orientationchange', update)
+      stopFullscreen()
     }
   }, [hostRef, barRef])
 
   return useMemo(() => {
     if (!coarse) return null
-    return touchLayout(frame.w, frame.h, frame.hud, safeOf(frame), arena)
-  }, [arena, coarse, frame])
+    return touchLayout(frame.w, frame.h, frame.hud, safeOf(frame))
+  }, [coarse, frame])
 }
 
-function useCoarsePointer(): boolean {
+export function useCoarsePointer(): boolean {
   return useSyncExternalStore(subscribeCoarse, coarseNow, () => false)
 }
 

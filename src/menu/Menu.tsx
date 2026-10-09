@@ -1,10 +1,13 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { PlayerOptions } from '../game/options.ts'
 import { Button } from '../ui/Button.tsx'
+import { Controls } from '../ui/Controls.tsx'
 import { Panel } from '../ui/Panel.tsx'
+import { useDialog } from '../ui/useDialog.ts'
 import { Options } from './Options.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
+const shipArt = '/assets/png/default/ships/ship_2.png'
 
 type LogTab = 'ranking' | 'history'
 
@@ -68,23 +71,69 @@ function Home({
   onOptions: () => void
   onTab: (tab: LogTab) => void
 }) {
+  const [help, setHelp] = useState(false)
+
   return (
-    <Panel>
-      <h1 className="menu-title">
-        <img src={titleArt} alt="Pirate Battle" draggable={false} />
-      </h1>
-      <p className="menu-tagline">Zarpe. Assuma o comando.</p>
-      <div className="menu-stack">
-        <Button id="menu-play" onClick={onPlay}>
-          Jogar
-        </Button>
-        <Button id="menu-options" variant="secondary" onClick={onOptions}>
-          Opções
-        </Button>
+    <>
+      <Panel>
+        <h1 className="menu-title">
+          <img src={titleArt} alt="Pirate Battle" draggable={false} />
+        </h1>
+        <p className="menu-tagline">Veleje. Assuma o comando.</p>
+        <div className="menu-stack">
+          <Button id="menu-play" onClick={onPlay}>
+            Jogar
+          </Button>
+          <Button id="menu-options" variant="secondary" onClick={onOptions}>
+            Opções
+          </Button>
+        </div>
+        <img className="menu-mark" src={shipArt} alt="" draggable={false} />
+        <p className="menu-tagline">
+          Navegue pelas ilhas. Sobreviva à batalha.
+        </p>
+        <Tabs tab={null} onTab={onTab} />
+        <div className="menu-stack menu-help">
+          <Button
+            id="menu-help"
+            compact
+            variant="secondary"
+            onClick={() => setHelp(true)}
+          >
+            Como jogar
+          </Button>
+        </div>
+      </Panel>
+      <HowToPlay open={help} onClose={() => setHelp(false)} />
+    </>
+  )
+}
+
+function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dialogRef = useDialog(open, onClose)
+  if (!open) return null
+
+  return (
+    <div className="dialog-layer">
+      <div className="pause-shade" aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        className="dialog-host"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-title"
+      >
+        <Panel>
+          <h2 id="help-title" className="menu-heading" tabIndex={-1}>
+            Como jogar
+          </h2>
+          <Controls />
+          <div className="menu-stack">
+            <Button onClick={onClose}>Fechar</Button>
+          </div>
+        </Panel>
       </div>
-      <Controls />
-      <Tabs tab={null} onTab={onTab} />
-    </Panel>
+    </div>
   )
 }
 
@@ -187,48 +236,4 @@ function siblingTab(tab: LogTab | null, key: string): LogTab {
   }
   if (tab === 'ranking') return 'history'
   return 'ranking'
-}
-
-function Controls() {
-  return (
-    <section className="controls" aria-labelledby="controls-heading">
-      <h2 id="controls-heading">Controles</h2>
-      <div className="controls-grid">
-        <div>
-          <h3>Teclado</h3>
-          <ul>
-            <li>
-              <kbd>W</kbd> <kbd>↑</kbd> Avançar
-            </li>
-            <li>
-              <kbd>S</kbd> <kbd>↓</kbd> Ré
-            </li>
-            <li>
-              <kbd>A</kbd> <kbd>←</kbd> Virar à esquerda
-            </li>
-            <li>
-              <kbd>D</kbd> <kbd>→</kbd> Virar à direita
-            </li>
-            <li>
-              <kbd>Espaço</kbd> Tiro frontal
-            </li>
-            <li>
-              <kbd>Q</kbd> <kbd>E</kbd> Tiro à esquerda e à direita
-            </li>
-            <li>
-              <kbd>Esc</kbd> <kbd>P</kbd> Pausar
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3>Toque</h3>
-          <ul>
-            <li>Direcional — navegar e virar</li>
-            <li>Botões de tiro — frente, esquerda e direita</li>
-            <li>Pausar — interrompe a partida</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-  )
 }

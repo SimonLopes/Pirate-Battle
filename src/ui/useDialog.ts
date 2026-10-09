@@ -17,7 +17,9 @@ export function useDialog(open: boolean, onDismiss: () => void) {
     if (!root) return
     const previous = document.activeElement
     const items = () => [...root.querySelectorAll<HTMLElement>(focusable)]
-    items()[0]?.focus()
+    const start =
+      root.querySelector<HTMLElement>('[tabindex="-1"]') ?? items()[0]
+    start?.focus()
 
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -32,7 +34,13 @@ export function useDialog(open: boolean, onDismiss: () => void) {
       const last = list[list.length - 1]
       if (!first || !last) return
       const current = document.activeElement
-      if (!(current instanceof Node) || !root.contains(current)) {
+      if (!(current instanceof HTMLElement) || !root.contains(current)) {
+        event.preventDefault()
+        const edge = event.shiftKey ? last : first
+        edge.focus()
+        return
+      }
+      if (!list.includes(current)) {
         event.preventDefault()
         const edge = event.shiftKey ? last : first
         edge.focus()

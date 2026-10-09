@@ -14,6 +14,7 @@ import {
   type PlayerOptions,
 } from '../game/options.ts'
 import { Button } from '../ui/Button.tsx'
+import { FullscreenButton } from '../ui/FullscreenButton.tsx'
 import { Panel } from '../ui/Panel.tsx'
 
 const art = '/assets/png/default/ui/controls'
@@ -33,6 +34,9 @@ export function Options({
   const spawnRef = useRef<HTMLInputElement>(null)
   const [sessionTime, setSessionTime] = useState(String(saved.sessionDuration))
   const [spawnTime, setSpawnTime] = useState(String(saved.spawnInterval))
+  const [fullscreenOnMobile, setFullscreenOnMobile] = useState(
+    saved.fullscreenOnMobile,
+  )
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [spawnError, setSpawnError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -58,6 +62,7 @@ export function Options({
     const next = {
       sessionDuration: Number(sessionTime.trim()),
       spawnInterval: Number(spawnTime.trim()),
+      fullscreenOnMobile,
     }
     if (!onSave(next)) {
       setSaveError('Não foi possível salvar as opções.')
@@ -96,6 +101,21 @@ export function Options({
             setSaveError(null)
           }}
         />
+        <div className="option-field">
+          <label className="option-label" htmlFor="fullscreen-mobile">
+            Fullscreen on mobile
+          </label>
+          <div className="option-row">
+            <input
+              id="fullscreen-mobile"
+              className="option-check"
+              type="checkbox"
+              checked={fullscreenOnMobile}
+              onChange={(event) => setFullscreenOnMobile(event.target.checked)}
+            />
+            <FullscreenButton />
+          </div>
+        </div>
         {saveError && (
           <p className="option-error" role="alert">
             {saveError}

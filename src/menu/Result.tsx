@@ -34,7 +34,7 @@ export function Result({
             {result.score}
           </p>
           <p id="result-summary" className="result-summary">
-            Pontos · <span className="sr-only">Time </span>
+            Pontos · <span className="sr-only">Tempo </span>
             <time dateTime={span(result.played)}>
               {clock(result.played)}
             </time> · {reason}

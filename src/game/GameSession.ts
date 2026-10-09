@@ -14,6 +14,7 @@ import type { HudStore } from './hud/store.ts'
 import { createKeyboard, type Keyboard } from './input/keyboard.ts'
 import {
   idleTouch,
+  type Box,
   type TouchBinding,
   type TouchBindings,
 } from './input/touch.ts'
@@ -37,6 +38,7 @@ export class GameSession {
   private destroyed = false
   private discard = false
   private endAnnounced = false
+  private stick: Box | null = null
 
   constructor(
     app: Application,
@@ -88,7 +90,7 @@ export class GameSession {
     this.app.ticker.add(this.onTick, undefined, UPDATE_PRIORITY.HIGH)
     this.app.ticker.start()
     this.publish()
-    this.hud.announce('Match started')
+    this.hud.announce('Partida iniciada')
     if (document.hidden) this.pause()
   }
 
@@ -102,7 +104,7 @@ export class GameSession {
     this.keyboard?.clear()
     this.app.ticker.stop()
     this.publish()
-    this.hud.announce('Match paused')
+    this.hud.announce('Pausado')
   }
 
   resume(): void {
@@ -116,6 +118,18 @@ export class GameSession {
     this.app.ticker.start()
     this.publish()
     this.hud.announce('')
+  }
+
+  setStick(box: Box | null): void {
+    if (this.destroyed) return
+    this.stick = box
+    this.publishStick()
+  }
+
+  cover(viewW: number, viewH: number): void {
+    if (this.destroyed) return
+    this.renderer.cover(viewW, viewH)
+    this.publishStick()
   }
 
   setTouch(binding: TouchBinding, down: boolean): void {
@@ -213,9 +227,10 @@ export class GameSession {
       this.renderer.draw(this.world, this.app.ticker.elapsedMS / 1000)
     }
     this.publish()
+    this.publishStick()
     if (this.endAnnounced || this.world.status !== 'ended') return
     this.endAnnounced = true
-    this.hud.announce('Match ended')
+    this.hud.announce('Partida encerrada')
   }
 
   private publish(): void {
@@ -226,6 +241,13 @@ export class GameSession {
     this.hud.publish(world.score, world.player.hp, secondsLeft, world.status)
   }
 
+  private publishStick(): void {
+    if (this.destroyed) return
+    const box = this.stick
+    const ship = box ? this.renderer.playerBox() : null
+    this.hud.setOnStick(ship !== null && box !== null && covers(ship, box))
+  }
+
   private readonly onHide = (): void => {
     if (document.hidden) this.pause()
   }
@@ -233,4 +255,16 @@ export class GameSession {
   private readonly onBlur = (): void => {
     this.pause()
   }
+}
+
+function covers(
+  ship: { x: number; y: number; w: number; h: number },
+  stick: Box,
+): boolean {
+  return (
+    ship.x < stick.x + stick.w &&
+    stick.x < ship.x + ship.w &&
+    ship.y < stick.y + stick.h &&
+    stick.y < ship.y + ship.h
+  )
 }

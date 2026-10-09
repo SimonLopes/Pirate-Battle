@@ -26,6 +26,8 @@ const faces = {
 
 const roundArt = 64
 const roundIcon = 32
+const restOpacity = 0.7
+const coverOpacity = 0.1
 
 const pads: {
   binding: 'fireFront' | 'fireLeft' | 'fireRight'
@@ -34,17 +36,17 @@ const pads: {
 }[] = [
   {
     binding: 'fireFront',
-    label: 'Fire front',
+    label: 'Tiro frontal',
     icon: `${art}/icon_fire_front.png`,
   },
   {
     binding: 'fireLeft',
-    label: 'Fire left',
+    label: 'Tiro à esquerda',
     icon: `${art}/icon_fire_left.png`,
   },
   {
     binding: 'fireRight',
-    label: 'Fire right',
+    label: 'Tiro à direita',
     icon: `${art}/icon_fire_right.png`,
   },
 ]
@@ -75,7 +77,7 @@ export function TouchControls({
   return (
     <div
       role="group"
-      aria-label="Touch controls"
+      aria-label="Controles de toque"
       inert={!running}
       style={overlay}
     >
@@ -84,6 +86,7 @@ export function TouchControls({
         knob={layout.knob}
         running={running}
         sessionRef={sessionRef}
+        store={store}
       />
       {pads.map((pad) => (
         <HoldButton
@@ -110,11 +113,13 @@ function Joystick({
   knob,
   running,
   sessionRef,
+  store,
 }: {
   box: Box
   knob: number
   running: boolean
   sessionRef: RefObject<GameSession | null>
+  store: HudStore
 }) {
   const wellRef = useRef<HTMLDivElement>(null)
   const active = useRef<number | null>(null)
@@ -122,6 +127,7 @@ function Joystick({
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [tracking, setTracking] = useState(false)
   const [play, setPlay] = useState(running)
+  const covered = useOnStick(store)
   if (play !== running) {
     setPlay(running)
     if (!running) {
@@ -200,17 +206,17 @@ function Joystick({
     <div
       ref={wellRef}
       role="group"
-      aria-label="Move"
+      aria-label="Direcional"
       onPointerDown={press}
       onPointerMove={move}
       onPointerUp={release}
       onPointerCancel={release}
       onLostPointerCapture={release}
       onContextMenu={(event) => event.preventDefault()}
-      style={stickStyle(box)}
+      style={stickStyle(box, covered ? coverOpacity : 1)}
     >
-      <span aria-hidden style={stickBaseStyle} />
-      <span aria-hidden style={knobStyle(knob, offset.x, offset.y)} />
+      <span aria-hidden style={stickFace(tracking)} />
+      <span aria-hidden style={knobStyle(knob, offset.x, offset.y, tracking)} />
     </div>
   )
 }
@@ -332,7 +338,7 @@ function PauseButton({
   return (
     <button
       type="button"
-      aria-label="Pause"
+      aria-label="Pausar"
       onClick={() => {
         if (!running) return
         sessionRef.current?.pause()
@@ -375,6 +381,14 @@ function useRunning(store: HudStore): boolean {
   )
 }
 
+function useOnStick(store: HudStore): boolean {
+  return useSyncExternalStore(
+    store.subscribe,
+    () => store.getView().onStick,
+    () => false,
+  )
+}
+
 const overlay: CSSProperties = {
   position: 'absolute',
   inset: 0,
@@ -382,25 +396,29 @@ const overlay: CSSProperties = {
   pointerEvents: 'none',
 }
 
-const stickBaseStyle: CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  backgroundColor: 'transparent',
-  backgroundImage: `url(${faces.normal})`,
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  backgroundSize: '100% 100%',
-  opacity: 0.72,
-  pointerEvents: 'none',
+function stickFace(pressed: boolean): CSSProperties {
+  return {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'transparent',
+    backgroundImage: `url(${faces.normal})`,
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '100% 100%',
+    opacity: pressed ? 1 : restOpacity,
+    pointerEvents: 'none',
+  }
 }
 
-function stickStyle(box: Box): CSSProperties {
+function stickStyle(box: Box, opacity: number): CSSProperties {
   return {
     position: 'absolute',
     left: box.x,
     top: box.y,
     width: box.w,
     height: box.h,
+    opacity,
+    transition: 'opacity 200ms ease',
     margin: 0,
     padding: 0,
     border: 'none',
@@ -413,7 +431,12 @@ function stickStyle(box: Box): CSSProperties {
   }
 }
 
-function knobStyle(size: number, x: number, y: number): CSSProperties {
+function knobStyle(
+  size: number,
+  x: number,
+  y: number,
+  pressed: boolean,
+): CSSProperties {
   return {
     position: 'absolute',
     left: `calc(50% + ${x}px)`,
@@ -426,6 +449,7 @@ function knobStyle(size: number, x: number, y: number): CSSProperties {
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: '100% 100%',
+    opacity: pressed ? 1 : restOpacity,
     pointerEvents: 'none',
   }
 }
@@ -524,6 +548,7 @@ function buttonStyle(
     WebkitTouchCallout: 'none',
     pointerEvents: 'auto',
     cursor: 'pointer',
+    opacity: face === 'pressed' ? 1 : restOpacity,
     outline: keyed ? '3px solid #e6c15a' : 'none',
     outlineOffset: 3,
   }
