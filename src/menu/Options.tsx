@@ -88,7 +88,7 @@ export function Options({
         </>
       }
     >
-      <h1 className="menu-heading">Options</h1>
+      <h1 className="menu-heading" tabIndex={-1}>Options</h1>
       <form
         id="options-form"
         className="option-form"

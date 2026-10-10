@@ -19,4 +19,10 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['playwright.config.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
