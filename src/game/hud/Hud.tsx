@@ -38,6 +38,7 @@ const scoreboard: CSSProperties = {
   background: 'transparent',
   color: '#fff6df',
   pointerEvents: 'none',
+  transition: 'opacity 200ms ease',
   userSelect: 'none',
 }
 
@@ -148,7 +149,7 @@ function HudScore({
   )
 
   return (
-    <div ref={barRef} style={scoreboard} inert={view.status === 'paused'}>
+    <div ref={barRef} style={{ ...scoreboard, opacity: view.onHud ? 0.35 : 1 }} inert={view.status === 'paused'}>
       <Counter icon={scoreArt} label="Score ">
         {view.score}
       </Counter>

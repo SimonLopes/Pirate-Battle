@@ -41,6 +41,7 @@ export class GameSession {
   private discard = false
   private endAnnounced = false
   private stick: Box | null = null
+  private hudHeight = 0
 
   constructor(
     app: Application,
@@ -125,6 +126,12 @@ export class GameSession {
   setStick(box: Box | null): void {
     if (this.destroyed) return
     this.stick = box
+    this.publishStick()
+  }
+
+  setHudHeight(height: number): void {
+    if (this.destroyed) return
+    this.hudHeight = height
     this.publishStick()
   }
 
@@ -265,8 +272,9 @@ export class GameSession {
   private publishStick(): void {
     if (this.destroyed) return
     const box = this.stick
-    const ship = box ? this.renderer.playerBox() : null
+    const ship = this.renderer.playerBox()
     this.hud.setOnStick(ship !== null && box !== null && covers(ship, box))
+    this.hud.setOnHud(ship !== null && ship.y < this.hudHeight)
   }
 
   private readonly onHide = (): void => {

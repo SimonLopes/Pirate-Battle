@@ -128,6 +128,7 @@ function Match({
       secondsLeft: snapshot.sessionDuration,
       status: 'running',
       onStick: false,
+      onHud: false,
     }),
   )
   const stickRef = useRef(layout?.stick ?? null)
@@ -151,6 +152,7 @@ function Match({
       if (!host) return
       fitStage(app, host.clientWidth, host.clientHeight, width, height)
       session?.cover(host.clientWidth, host.clientHeight)
+      session?.setHudHeight(barRef.current?.offsetHeight ?? 0)
     }
     const adopt = (next: GameSession) => {
       session = next
