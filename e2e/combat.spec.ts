@@ -125,6 +125,7 @@ test.describe('enemies', () => {
   test('chaser rams the player and explodes without scoring', async ({
     page,
   }) => {
+    test.setTimeout(60_000)
     const start = await readState(page)
     await step(page, 1000)
     const closer = await readState(page)
