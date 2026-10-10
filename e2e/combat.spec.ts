@@ -1,10 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { Snapshot } from '../src/game/testing.ts'
+import { aim, play, readState, step, type Point } from './helpers.ts'
 
 type Ship = Snapshot['player']
-type Point = { x: number; y: number }
-
-const assetTimeout = 20_000
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/?test=1')
@@ -182,12 +180,6 @@ test.describe('spawns', () => {
   })
 })
 
-async function play(page: Page) {
-  await page.getByRole('button', { name: 'Play', exact: true }).click()
-  await expect(page.locator('canvas')).toBeVisible({ timeout: assetTimeout })
-  await expect(page.locator('[aria-live="polite"]')).toHaveText('Match started')
-}
-
 async function closeIn(page: Page, range: number): Promise<Snapshot> {
   for (let i = 0; i < 60; i += 1) {
     const state = await readState(page)
@@ -197,20 +189,6 @@ async function closeIn(page: Page, range: number): Promise<Snapshot> {
     await step(page, 100)
   }
   throw new Error('chaser never came in range')
-}
-
-async function aim(page: Page, state: Snapshot, target: Point) {
-  const { player, config } = state
-  const angle = Math.atan2(target.y - player.y, target.x - player.x)
-  const delta = wrap(angle - player.heading)
-  const turns = Math.round(
-    Math.abs(delta) / (config.ships.player.turnSpeed * config.fixedDt),
-  )
-  if (turns === 0) return
-  const key = delta < 0 ? 'KeyA' : 'KeyD'
-  await page.keyboard.down(key)
-  await step(page, turns * config.fixedDt * 1000)
-  await page.keyboard.up(key)
 }
 
 async function stepUntil(
@@ -259,20 +237,4 @@ function hull(ship: Ship): Point {
 
 function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y)
-}
-
-function wrap(angle: number): number {
-  return Math.atan2(Math.sin(angle), Math.cos(angle))
-}
-
-async function readState(page: Page): Promise<Snapshot> {
-  const state = await page.evaluate(() => window.__PIRATE__?.getState() ?? null)
-  if (!state) throw new Error('match state is missing')
-  return state
-}
-
-async function step(page: Page, ms: number) {
-  await page.evaluate((amount) => {
-    window.__PIRATE__?.step(amount)
-  }, ms)
 }

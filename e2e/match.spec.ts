@@ -1,32 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
+import type { Snapshot } from '../src/game/testing.ts'
+import { assetTimeout, play, readState, step } from './helpers.ts'
 
 const spawn = { x: 1056, y: 608 }
 const headingUp = -Math.PI / 2
-const assetTimeout = 20_000
-
-type Player = {
-  x: number
-  y: number
-  heading: number
-  hp: number
-}
-
-type MatchState = {
-  status: string
-  score: number
-  time: number
-  player: Player
-}
-
-declare global {
-  interface Window {
-    __PIRATE__?: {
-      getState(): MatchState | null
-      setSeed(seed: number): void
-      step(ms: number): void
-    }
-  }
-}
 
 test.describe('asset loading', () => {
   test('retries after an asset request fails', async ({ page }) => {
@@ -76,11 +53,7 @@ test.describe('sailing', () => {
     await page.evaluate((seed) => {
       window.__PIRATE__?.setSeed(seed)
     }, 1)
-    await page.getByRole('button', { name: 'Play', exact: true }).click()
-    await expect(page.locator('canvas')).toBeVisible({ timeout: assetTimeout })
-    await expect(page.locator('[aria-live="polite"]')).toHaveText(
-      'Match started',
-    )
+    await play(page)
   })
 
   test('starts a match at the spawn', async ({ page }) => {
@@ -166,7 +139,7 @@ test.describe('sailing', () => {
   })
 })
 
-function halted(prev: MatchState, next: MatchState): boolean {
+function halted(prev: Snapshot, next: Snapshot): boolean {
   return (
     Math.abs(next.player.x - prev.player.x) < 0.5 &&
     Math.abs(next.player.y - prev.player.y) < 0.5
@@ -175,8 +148,8 @@ function halted(prev: MatchState, next: MatchState): boolean {
 
 async function sailUntil(
   page: Page,
-  done: (prev: MatchState, next: MatchState) => boolean,
-): Promise<MatchState> {
+  done: (prev: Snapshot, next: Snapshot) => boolean,
+): Promise<Snapshot> {
   let prev = await readState(page)
   for (let i = 0; i < 40; i += 1) {
     await step(page, 200)
@@ -186,30 +159,4 @@ async function sailUntil(
     prev = next
   }
   return prev
-}
-
-async function readState(page: Page): Promise<MatchState> {
-  const state = await page.evaluate(() => {
-    const world = window.__PIRATE__?.getState()
-    if (!world) return null
-    return {
-      status: world.status,
-      score: world.score,
-      time: world.time,
-      player: {
-        x: world.player.x,
-        y: world.player.y,
-        heading: world.player.heading,
-        hp: world.player.hp,
-      },
-    }
-  })
-  if (!state) throw new Error('match state is missing')
-  return state
-}
-
-async function step(page: Page, ms: number) {
-  await page.evaluate((amount) => {
-    window.__PIRATE__?.step(amount)
-  }, ms)
 }

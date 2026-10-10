@@ -15,12 +15,6 @@ export function length(v: Vec2): number {
   return Math.hypot(v.x, v.y)
 }
 
-export function normalize(v: Vec2): Vec2 {
-  const len = length(v)
-  if (len === 0) return { x: 0, y: 0 }
-  return scale(v, 1 / len)
-}
-
 export function distance(a: Vec2, b: Vec2): number {
   return Math.hypot(b.x - a.x, b.y - a.y)
 }

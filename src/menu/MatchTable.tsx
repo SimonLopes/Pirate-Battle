@@ -7,9 +7,10 @@ import { isAxiosError } from 'axios'
 import { useState, type ReactNode } from 'react'
 import type { MatchPage, MatchRecord, PageParams } from '../api/types.ts'
 import { play } from '../audio.ts'
+import { apiConfig } from '../game/config.ts'
 import { Button } from '../ui/Button.tsx'
 
-const pageSize = 5
+const { pageSize } = apiConfig
 const prevArt = '/assets/png/default/ui/controls/icon_turn_left.png'
 const nextArt = '/assets/png/default/ui/controls/icon_turn_right.png'
 

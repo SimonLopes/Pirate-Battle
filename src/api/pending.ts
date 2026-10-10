@@ -1,6 +1,6 @@
 import { loadPlayerId } from './player.ts'
-import { readStorage, removeStorage, writeStorage } from '../storage.ts'
-import { isMatchRecord, parseJson } from '../validate.ts'
+import { readStorage, removeStorage, writeStorage } from '../lib/storage.ts'
+import { isMatchRecord, parseJson } from '../lib/validate.ts'
 import type { EndReason, MatchRecord } from './types.ts'
 
 const storageKey = 'pirate-battle.pending'

@@ -34,7 +34,7 @@ export type StickAim = {
   radius: number
 }
 
-export type StickMove = {
+type StickMove = {
   forward: boolean
   turnLeft: boolean
   turnRight: boolean

@@ -23,7 +23,7 @@ export function isFullscreen(): boolean {
   return document.fullscreenElement !== null || webkitElement() !== null
 }
 
-export function enterFullscreen(): void {
+function enterFullscreen(): void {
   if (isFullscreen() || !canFullscreen()) return
   const root = appRoot()
   if (!root) return

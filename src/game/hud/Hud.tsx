@@ -249,7 +249,7 @@ function PauseDialog({
             Paused
           </h2>
           <p id="pause-hint" className="menu-copy">
-            Press Play to start
+          Game paused
           </p>
           <div className="option-field">
             <label className="option-label" htmlFor="pause-mute">

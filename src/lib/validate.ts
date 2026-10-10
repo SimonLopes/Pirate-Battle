@@ -1,4 +1,4 @@
-import type { MatchRecord } from './api/types.ts'
+import type { MatchRecord } from '../api/types.ts'
 
 export function parseJson(raw: string | null): unknown {
   if (!raw) return null

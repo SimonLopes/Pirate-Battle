@@ -15,11 +15,3 @@ export function idleActions(): Actions {
     fireRight: false,
   }
 }
-
-export function clearActions(actions: Actions): void {
-  actions.thrust = 0
-  actions.turn = 0
-  actions.fireFront = false
-  actions.fireLeft = false
-  actions.fireRight = false
-}

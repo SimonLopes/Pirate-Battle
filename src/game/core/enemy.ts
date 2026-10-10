@@ -4,8 +4,6 @@ import type { Collider } from './collider.ts'
 import { clamp, distance, fromAngle, wrapAngle } from './math.ts'
 import { hullBody, moveHull, type Ship } from './ship.ts'
 
-export type EnemyType = 'chaser' | 'shooter'
-
 export type Enemy =
   (Ship & { type: 'chaser' }) | (Ship & { type: 'shooter'; cooldown: number })
 

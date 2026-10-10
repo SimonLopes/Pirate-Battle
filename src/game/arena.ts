@@ -1,6 +1,6 @@
 import type { Collider } from './core/collider.ts'
 
-export type ArenaPoint = {
+type ArenaPoint = {
   x: number
   y: number
 }

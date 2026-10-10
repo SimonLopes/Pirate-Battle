@@ -1,11 +1,11 @@
-import { readStorage, writeStorage } from '../storage.ts'
+import { readStorage, writeStorage } from '../lib/storage.ts'
 import {
   isEndReason,
   isNonNegativeInteger,
   isNonNegativeNumber,
   isRecord,
   parseJson,
-} from '../validate.ts'
+} from '../lib/validate.ts'
 import type { EndReason } from './core/world.ts'
 
 const storageKey = 'pirate-battle.result'

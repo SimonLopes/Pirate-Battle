@@ -1,6 +1,6 @@
 import type { MatchStatus } from '../core/world.ts'
 
-export type HudView = {
+type HudView = {
   score: number
   hp: number
   secondsLeft: number

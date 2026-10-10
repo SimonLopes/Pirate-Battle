@@ -1,5 +1,5 @@
-import { readStorage, writeStorage } from '../storage.ts'
-import { isRecord, parseJson } from '../validate.ts'
+import { readStorage, writeStorage } from '../lib/storage.ts'
+import { isRecord, parseJson } from '../lib/validate.ts'
 import {
   defaultConfig,
   sessionDurationLimits,

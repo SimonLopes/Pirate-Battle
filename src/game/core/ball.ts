@@ -3,7 +3,7 @@ import { overlaps, type Collider } from './collider.ts'
 import { fromAngle, type Vec2 } from './math.ts'
 import { hullBody, type Ship } from './ship.ts'
 
-export type BallOwner = 'player' | 'enemy'
+type BallOwner = 'player' | 'enemy'
 
 export type Ball = {
   x: number

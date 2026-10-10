@@ -1,5 +1,6 @@
-import { readStorage, writeStorage } from '../storage.ts'
-import { isRecord, parseJson } from '../validate.ts'
+import { latencyConfig } from '../game/config.ts'
+import { readStorage, writeStorage } from '../lib/storage.ts'
+import { isRecord, parseJson } from '../lib/validate.ts'
 
 export const networkScenarios = [
   'success',
@@ -25,7 +26,7 @@ export type NetworkSettings = {
   seed: number
 }
 
-export const defaultNetworkSettings: NetworkSettings = {
+const defaultNetworkSettings: NetworkSettings = {
   scenario: 'success',
   seed: 1337,
 }
@@ -73,16 +74,20 @@ export function scenarioLatency(
   settings: NetworkSettings,
   endpoint: string,
 ): number {
-  if (settings.scenario === 'slow') return 1500
+  if (settings.scenario === 'slow') return latencyConfig.slow
   const count = nextCount(settings, endpoint)
   if (settings.scenario === 'out-of-order') {
-    return count % 2 === 0 ? 1600 : 100
+    return count % 2 === 0
+      ? latencyConfig.outOfOrderSlow
+      : latencyConfig.outOfOrderFast
   }
   if (settings.scenario !== 'jitter') return 0
-  return 250 + Math.floor(seedRandom(settings.seed, count) * 1251)
+  const { jitterMin, jitterMax } = latencyConfig
+  const spread = jitterMax - jitterMin + 1
+  return jitterMin + Math.floor(seedRandom(settings.seed, count) * spread)
 }
 
-export function resetScenarioRuntime(): void {
+function resetScenarioRuntime(): void {
   requestCounts.clear()
 }
 

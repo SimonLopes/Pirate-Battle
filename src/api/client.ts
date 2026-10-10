@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { apiConfig } from '../game/config.ts'
 import type {
   MatchPage,
   MatchRecord,
@@ -8,7 +9,7 @@ import type {
 
 const http = axios.create({
   baseURL: '/api',
-  timeout: 8000,
+  timeout: apiConfig.timeout,
 })
 
 export async function getRanking(

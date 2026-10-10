@@ -1,4 +1,4 @@
-import { readStorage, writeStorage } from '../storage.ts'
+import { readStorage, writeStorage } from '../lib/storage.ts'
 
 const storageKey = 'pirate-battle.player'
 

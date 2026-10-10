@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import type { Snapshot } from '../src/game/testing.ts'
+import { play, step } from './helpers.ts'
 
-const assetTimeout = 20_000
 const optionsKey = 'pirate-battle.options'
 
 const options = {
@@ -65,9 +65,7 @@ async function openMatch(page: Page) {
   await page.evaluate((seed) => {
     window.__PIRATE__?.setSeed(seed)
   }, 1)
-  await page.getByRole('button', { name: 'Play', exact: true }).click()
-  await expect(page.locator('canvas')).toBeVisible({ timeout: assetTimeout })
-  await expect(page.locator('[aria-live="polite"]')).toHaveText('Match started')
+  await play(page)
 }
 
 async function sink(page: Page) {
@@ -84,10 +82,4 @@ async function sink(page: Page) {
   await expect(
     page.getByRole('heading', { name: 'Battle complete' }),
   ).toBeVisible()
-}
-
-async function step(page: Page, ms: number) {
-  await page.evaluate((amount) => {
-    window.__PIRATE__?.step(amount)
-  }, ms)
 }

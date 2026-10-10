@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { Snapshot } from '../src/game/testing.ts'
+import { play } from './helpers.ts'
 
-const assetTimeout = 20_000
 const pendingKey = 'pirate-battle.pending'
 const matchesKey = 'pirate-battle.matches'
 
@@ -118,7 +118,7 @@ test.describe('match records', () => {
   test('a finished match shows up in ranking and history', async ({ page }) => {
     await page.goto('/?test=1&scenario=success')
     await saveOptions(page)
-    await play(page)
+    await playSeeded(page)
     const ended = await sink(page)
     await expect(page.getByText('Record saved')).toBeVisible()
     await page.getByRole('button', { name: 'Main menu' }).click()
@@ -144,7 +144,7 @@ test.describe('match records', () => {
   test('a pending record is sent after refresh', async ({ page }) => {
     await page.goto('/?test=1&scenario=offline-on-finish')
     await saveOptions(page)
-    await play(page)
+    await playSeeded(page)
     await sink(page)
     await expect(page.getByText('Save failed')).toBeVisible()
     expect(await storedCount(page, pendingKey)).toBe(1)
@@ -167,7 +167,7 @@ test.describe('match records', () => {
     test.setTimeout(60_000)
     await page.goto('/?test=1&scenario=timeout-after-save')
     await saveOptions(page)
-    await play(page)
+    await playSeeded(page)
     await sink(page)
 
     await expect(page.getByText('Save failed')).toBeVisible({
@@ -203,13 +203,11 @@ async function selectScenario(page: Page, scenario: string) {
   await page.getByRole('combobox', { name: 'Scenario' }).selectOption(scenario)
 }
 
-async function play(page: Page) {
+async function playSeeded(page: Page) {
   await page.evaluate((seed) => {
     window.__PIRATE__?.setSeed(seed)
   }, 1)
-  await page.getByRole('button', { name: 'Play', exact: true }).click()
-  await expect(page.locator('canvas')).toBeVisible({ timeout: assetTimeout })
-  await expect(page.locator('[aria-live="polite"]')).toHaveText('Match started')
+  await play(page)
 }
 
 async function sink(page: Page): Promise<Snapshot> {

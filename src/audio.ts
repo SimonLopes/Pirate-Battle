@@ -1,3 +1,4 @@
+import { audioConfig } from './game/config.ts'
 import type { Cue } from './game/core/world.ts'
 
 export type SoundName =
@@ -15,7 +16,7 @@ export type SoundName =
 
 type Loop = { source: AudioBufferSourceNode; gain: GainNode }
 
-const folder = '/assets/sounds'
+const folder = `${import.meta.env.BASE_URL}assets/sounds`
 const names: SoundName[] = [
   'cannon_fire_1',
   'cannon_fire_2',
@@ -45,15 +46,14 @@ const names: SoundName[] = [
   'ship_sailing_loop',
 ]
 const gestures = ['mousedown', 'keydown', 'touchend'] as const
-const oceanVolume = 0.25
-const sailVolume = 0.2
-const fade = 0.08
+const { oceanVolume, sailVolume, fade } = audioConfig
 
 const buffers = new Map<SoundName, AudioBuffer>()
 const playing = new Set<AudioBufferSourceNode>()
 let ctx: AudioContext | null = null
 let master: GainNode | null = null
 let isMuted = false
+let hasWarned = false
 let ocean: Loop | null = null
 let sailing: Loop | null = null
 
@@ -66,24 +66,14 @@ export function setMuted(muted: boolean): void {
   if (master) master.gain.value = muted ? 0 : 1
 }
 
-export function play(name: SoundName, delay = 0): void {
-  start(name, delay)
+export function play(name: SoundName): void {
+  start(name, 0)
 }
 
 export function playCue(cue: Cue): void {
-  if (cue === 'game_complete') {
-    play(cue)
-    return
-  }
-  if (cue === 'ship_sinking') {
-    play(cue)
-    play('game_over', buffers.get(cue)?.duration ?? 0)
-    return
-  }
-  const source = start(cue, 0)
-  if (!source) return
-  playing.add(source)
-  source.addEventListener('ended', () => playing.delete(source))
+  track(start(cue, 0))
+  if (cue !== 'ship_sinking') return
+  track(start('game_over', buffers.get(cue)?.duration ?? 0))
 }
 
 export function ambience(isSailing: boolean): void {
@@ -126,14 +116,26 @@ function open(): AudioContext {
   ctx = audio
   for (const name of names) {
     void fetch(`${folder}/${name}.wav`)
-      .then((response) => response.arrayBuffer())
+      .then((response) => {
+        if (!response.ok) throw new Error(`${name}.wav: ${response.status}`)
+        return response.arrayBuffer()
+      })
       .then((data) => audio.decodeAudioData(data))
-      .then(
-        (buffer) => buffers.set(name, buffer),
-        () => undefined,
-      )
+      .then((buffer) => buffers.set(name, buffer), warn)
   }
   return audio
+}
+
+function warn(error: unknown): void {
+  if (hasWarned) return
+  hasWarned = true
+  console.warn('Could not load sounds', error)
+}
+
+function track(source: AudioBufferSourceNode | null): void {
+  if (!source) return
+  playing.add(source)
+  source.addEventListener('ended', () => playing.delete(source))
 }
 
 function start(name: SoundName, delay: number): AudioBufferSourceNode | null {

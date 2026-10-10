@@ -74,6 +74,25 @@ export const sessionDurationLimits = { min: 60, max: 180 } as const
 
 export const spawnIntervalLimits = { min: 2, max: 10 } as const
 
+export const audioConfig = {
+  oceanVolume: 0.25,
+  sailVolume: 0.2,
+  fade: 0.08,
+} as const
+
+export const apiConfig = {
+  timeout: 8000,
+  pageSize: 5,
+} as const
+
+export const latencyConfig = {
+  slow: 1500,
+  outOfOrderSlow: 1600,
+  outOfOrderFast: 100,
+  jitterMin: 250,
+  jitterMax: 1500,
+} as const
+
 export const defaultConfig: GameConfig = {
   sessionDuration: 120,
   fixedDt: 1 / 60,
