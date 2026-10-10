@@ -1,8 +1,9 @@
 import type { EndReason, MatchRecord } from '../api/types.ts'
+import { defaultConfig } from '../game/config.ts'
 
 const defaultMatchConfig = {
-  sessionTime: 120,
-  spawnInterval: 3,
+  sessionTime: defaultConfig.sessionDuration,
+  spawnInterval: defaultConfig.spawnInterval,
 }
 
 function match(
@@ -13,8 +14,8 @@ function match(
   score: number,
   durationMs: number,
   endReason: EndReason = 'time',
-  sessionTime = 120,
-  spawnInterval = 3,
+  sessionTime = defaultMatchConfig.sessionTime,
+  spawnInterval = defaultMatchConfig.spawnInterval,
 ): MatchRecord {
   return {
     matchId,
@@ -25,7 +26,7 @@ function match(
     durationMs,
     endReason,
     config:
-      sessionTime === 120 && spawnInterval === 3
+      sessionTime === defaultMatchConfig.sessionTime && spawnInterval === defaultMatchConfig.spawnInterval
         ? { ...defaultMatchConfig }
         : { sessionTime, spawnInterval },
   }

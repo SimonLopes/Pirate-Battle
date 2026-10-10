@@ -17,6 +17,7 @@ import {
 } from '../game/options.ts'
 import { Button } from '../ui/Button.tsx'
 import { FullscreenButton } from '../ui/FullscreenButton.tsx'
+import { MuteField } from '../ui/MuteField.tsx'
 import { Panel } from '../ui/Panel.tsx'
 
 const art = '/assets/png/default/ui/controls'
@@ -96,7 +97,9 @@ export function Options({
         </>
       }
     >
-      <h1 className="menu-heading" tabIndex={-1}>Options</h1>
+      <h1 className="menu-heading" tabIndex={-1}>
+        Options
+      </h1>
       <form
         id="options-form"
         className="option-form"
@@ -142,6 +145,7 @@ export function Options({
           }}
         />
         <TimeField
+          className="option-span"
           id="spawn-time"
           label="Enemy spawn time"
           value={spawnTime}
@@ -168,18 +172,7 @@ export function Options({
             <FullscreenButton />
           </div>
         </div>
-        <div className="option-field">
-          <label className="option-label" htmlFor="mute-sound">
-            Mute sound
-          </label>
-          <input
-            id="mute-sound"
-            className="option-check"
-            type="checkbox"
-            checked={muted}
-            onChange={(event) => setMuted(event.target.checked)}
-          />
-        </div>
+        <MuteField id="mute-sound" muted={muted} onChange={setMuted} />
       </form>
     </Panel>
   )
@@ -192,6 +185,7 @@ function TimeField({
   error,
   limits,
   step = 1,
+  className,
   inputRef,
   onChange,
 }: {
@@ -201,6 +195,7 @@ function TimeField({
   error: string | null
   limits: { min: number; max: number }
   step?: number
+  className?: string
   inputRef: RefObject<HTMLInputElement | null>
   onChange: (value: string) => void
 }) {
@@ -211,7 +206,7 @@ function TimeField({
   const atMax = seconds !== null && seconds >= limits.max
 
   return (
-    <div className="option-field">
+    <div className={className ? `option-field ${className}` : 'option-field'}>
       <label className="option-label" htmlFor={id}>
         {label}
         <span className="sr-only"> in seconds</span>

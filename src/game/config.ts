@@ -94,10 +94,10 @@ export const latencyConfig = {
 } as const
 
 export const defaultConfig: GameConfig = {
-  sessionDuration: 120,
+  sessionDuration: 90,
   fixedDt: 1 / 60,
   maxSteps: 5,
-  spawnInterval: 3,
+  spawnInterval: 5,
   spawnArea: {
     playerDistance: 520,
     islandMargin: 24,
@@ -110,40 +110,40 @@ export const defaultConfig: GameConfig = {
   },
   ships: {
     player: {
-      hp: 100,
+      hp: 140,
       moveSpeed: 180,
       turnSpeed: 2,
       radius: 21,
       hullOffset: 34,
     },
     chaser: {
-      hp: 30,
-      moveSpeed: 150,
+      hp: 20,
+      moveSpeed: 120,
       turnSpeed: 2.4,
       radius: 21,
       hullOffset: 34,
-      collisionDamage: 25,
+      collisionDamage: 20,
     },
     shooter: {
-      hp: 40,
-      moveSpeed: 110,
+      hp: 30,
+      moveSpeed: 90,
       turnSpeed: 1.6,
       radius: 21,
       hullOffset: 34,
-      attackRange: 360,
-      attackCooldown: 1.5,
+      attackRange: 320,
+      attackCooldown: 2.2,
     },
   },
   ball: {
     speed: 400,
     damage: 10,
-    lifetime: 1.2,
-    range: 480,
+    lifetime: 1.4,
+    range: 560,
     radius: 5,
   },
   cannon: {
-    frontCooldown: 0.45,
-    sideCooldown: 1.2,
+    frontCooldown: 0.3,
+    sideCooldown: 0.8,
     sideSpacing: 18,
   },
   alerts: {

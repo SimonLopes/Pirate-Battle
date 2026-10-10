@@ -267,6 +267,9 @@ function Match({
         barRef={barRef}
         muted={muted}
         onMute={onMute}
+        onPause={() => {
+          sessionRef.current?.pause()
+        }}
         onResume={() => {
           sessionRef.current?.resume()
         }}

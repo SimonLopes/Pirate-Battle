@@ -68,7 +68,7 @@ test.describe('match end', () => {
 
     expect(await readState(page)).toEqual(first)
     await expect(page.locator('canvas')).toHaveCount(1)
-    await expect(page.locator('time')).toHaveText('2:00')
+    await expect(page.locator('time')).toHaveText('1:30')
   })
 })
 
@@ -87,7 +87,7 @@ test.describe('pause', () => {
 
     expect(paused.status).toBe('paused')
     expect(await readState(page)).toEqual(paused)
-    await expect(page.locator('time')).toHaveText('1:59')
+    await expect(page.locator('time')).toHaveText('1:29')
 
     await page.getByRole('button', { name: 'Resume' }).click()
     await step(page, 500)
@@ -109,7 +109,7 @@ test.describe('pause', () => {
 
     expect(paused.status).toBe('paused')
     expect(await readState(page)).toEqual(paused)
-    await expect(page.locator('time')).toHaveText('1:59')
+    await expect(page.locator('time')).toHaveText('1:29')
 
     await page.getByRole('button', { name: 'Resume' }).click()
     await step(page, 500)

@@ -6,14 +6,17 @@ import {
 } from 'react'
 import { Button } from '../../ui/Button.tsx'
 import { FullscreenButton } from '../../ui/FullscreenButton.tsx'
+import { MuteField } from '../../ui/MuteField.tsx'
 import { Panel } from '../../ui/Panel.tsx'
 import { useDialog } from '../../ui/useDialog.ts'
+import { useCoarsePointer } from '../input/useTouchLayout.ts'
 import type { HudStore } from './store.ts'
 
 const hudArt = '/assets/png/default/ui/hud'
 const panelArt = `${hudArt}/counter_panel.png`
 const scoreArt = `${hudArt}/icon_score.png`
 const timeArt = `${hudArt}/icon_time.png`
+const pauseArt = '/assets/png/default/ui/controls/icon_pause.png'
 
 const panelW = 160
 const panelH = 56
@@ -119,6 +122,7 @@ export function Hud({
   store,
   muted,
   onMute,
+  onPause,
   onResume,
   onMenu,
   barRef,
@@ -126,13 +130,14 @@ export function Hud({
   store: HudStore
   muted: boolean
   onMute: (muted: boolean) => void
+  onPause: () => void
   onResume: () => void
   onMenu: () => void
   barRef: Ref<HTMLDivElement>
 }) {
   return (
     <>
-      <HudScore store={store} barRef={barRef} />
+      <HudScore store={store} barRef={barRef} onPause={onPause} />
       <HudNotice store={store} />
       <PauseDialog
         store={store}
@@ -148,18 +153,25 @@ export function Hud({
 function HudScore({
   store,
   barRef,
+  onPause,
 }: {
   store: HudStore
   barRef: Ref<HTMLDivElement>
+  onPause: () => void
 }) {
   const view = useSyncExternalStore(
     store.subscribe,
     store.getView,
     store.getView,
   )
+  const coarse = useCoarsePointer()
 
   return (
-    <div ref={barRef} style={{ ...scoreboard, opacity: view.onHud ? 0.35 : 1 }} inert={view.status === 'paused'}>
+    <div
+      ref={barRef}
+      style={{ ...scoreboard, opacity: view.onHud ? 0.35 : 1 }}
+      inert={view.status === 'paused'}
+    >
       <Counter icon={scoreArt} label="Score ">
         {view.score}
       </Counter>
@@ -168,6 +180,17 @@ function HudScore({
           {clock(view.secondsLeft)}
         </time>
       </Counter>
+      {!coarse && (
+        <button
+          type="button"
+          className="step-button hud-pause"
+          aria-label="Pause"
+          title="Pause (Esc / P)"
+          onClick={onPause}
+        >
+          <img src={pauseArt} alt="" draggable={false} />
+        </button>
+      )}
       <FullscreenButton className="hud-fullscreen" />
     </div>
   )
@@ -249,20 +272,9 @@ function PauseDialog({
             Paused
           </h2>
           <p id="pause-hint" className="menu-copy">
-          Game paused
+            Game paused
           </p>
-          <div className="option-field">
-            <label className="option-label" htmlFor="pause-mute">
-              Mute sound
-            </label>
-            <input
-              id="pause-mute"
-              className="option-check"
-              type="checkbox"
-              checked={muted}
-              onChange={(event) => onMute(event.target.checked)}
-            />
-          </div>
+          <MuteField id="pause-mute" muted={muted} onChange={onMute} />
           <div className="menu-stack">
             <Button sound={null} onClick={onResume}>
               Resume

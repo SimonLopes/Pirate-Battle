@@ -59,9 +59,9 @@ test.describe('cannons', () => {
     page,
   }) => {
     await page.keyboard.down('Space')
-    await step(page, 400)
+    await step(page, 200)
     const loading = await readState(page)
-    await step(page, 100)
+    await step(page, 150)
     const reloaded = await readState(page)
     await page.keyboard.up('Space')
 

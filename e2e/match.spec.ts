@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { Snapshot } from '../src/game/testing.ts'
 import { assetTimeout, play, readState, step } from './helpers.ts'
+import { defaultConfig } from '../src/game/config.ts'
 
 const spawn = { x: 1056, y: 608 }
 const headingUp = -Math.PI / 2
@@ -61,11 +62,11 @@ test.describe('sailing', () => {
     expect(state.status).toBe('running')
     expect(state.score).toBe(0)
     expect(state.time).toBe(0)
-    expect(state.player.hp).toBe(100)
+    expect(state.player.hp).toBe(defaultConfig.ships.player.hp)
     expect(state.player.x).toBeCloseTo(spawn.x, 0)
     expect(state.player.y).toBeCloseTo(spawn.y, 0)
     expect(state.player.heading).toBeCloseTo(headingUp, 2)
-    await expect(page.locator('time')).toHaveText('2:00')
+    await expect(page.locator('time')).toHaveText('1:30')
   })
 
   test('sails forward while W is held', async ({ page }) => {
