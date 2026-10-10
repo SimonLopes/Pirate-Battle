@@ -16,9 +16,7 @@ Over 180 s I got 32382 frames, 179.9 fps on average, a p95 frame time of 5.6 ms 
 
 iPhone 15 Pro, Safari.
 
-My first runs held a steady 29.98 fps, with a p95 of 41 ms and a peak of 97 entities. The canvas was rendering at the full devicePixelRatio, which is 3 on this phone, and Safari dropped to half rate because it couldn't make 60. After I capped the canvas resolution at 2x, the same match ran 180.04 s with 10758 frames, 59.75 fps on average, a p95 of 18 ms and a peak of 94 entities.
-
-Low Power Mode caps Safari at 30 fps, so it needs to be off when testing.
+With Low Power Mode on it held a steady 29.98 fps, with a p95 of 41 ms and a peak of 97 entities. Low Power Mode caps Safari at 30 fps, so that's the cap and not the game. With it off, the same match ran 180.04 s with 10758 frames, 59.75 fps on average, a p95 of 18 ms and a peak of 94 entities.
 
 ## Memory
 
@@ -28,7 +26,7 @@ I also did a headless run on the production build: 10 matches of starting, about
 
 ## What keeps it cheap
 
-The simulation runs on a fixed timestep and never runs more than 5 steps in a frame. Cannonball sprites, enemy ship sprites and effects (flashes, explosions, trails, splashes, wrecks) are created once in pools and reused, so nothing is allocated per shot. Textures are loaded once and shared between matches. The canvas resolution is capped at 2x. The HUD store only notifies React when a value changes, so React doesn't render every frame.
+The simulation runs on a fixed timestep and never runs more than 5 steps in a frame. Cannonball sprites, enemy ship sprites and effects (flashes, explosions, trails, splashes, wrecks) are created once in pools and reused, so nothing is allocated per shot. Textures are loaded once and shared between matches. The HUD store only notifies React when a value changes, so React doesn't render every frame.
 
 ## Limitations
 

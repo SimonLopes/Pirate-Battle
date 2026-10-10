@@ -50,8 +50,6 @@ The HUD reads from a tiny external store in `hud/store.ts` through `useSyncExter
 
 `GameCanvas` creates the Pixi `Application` in an effect and destroys it in the cleanup. Because `app.init` is async, I keep an `alive` flag: if Strict Mode, or the player leaving quickly, unmounts the component before init finishes, the app is destroyed as soon as init resolves. `GameSession.destroy()` removes the ticker callback and the keyboard, blur and visibility listeners, destroys the renderer and stops the sounds. Restarting destroys the old session and builds a new one. Textures load once and stay cached, and the loading screen shows progress with a retry button if something fails.
 
-The canvas resolution follows `devicePixelRatio` but is capped at 2. At 3x on an iPhone, Safari couldn't keep 60 fps and dropped to 30.
-
 ## Collisions
 
 Each ship is a circle, with the hull circle offset a bit forward from the sprite center (`hullOffset`) so it matches the shape of the boat better. Islands come from the map as circle and rectangle colliders. Hulls are pushed out of colliders and clamped inside the arena. Cannonballs disappear when they hit an island, leave the arena, or run out of range or lifetime. A player ball damages the first enemy it touches and is removed in the same step, so one ball can never score twice. A chaser that rams the player deals its damage and is removed.

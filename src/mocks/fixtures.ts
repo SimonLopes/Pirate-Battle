@@ -26,7 +26,8 @@ function match(
     durationMs,
     endReason,
     config:
-      sessionTime === defaultMatchConfig.sessionTime && spawnInterval === defaultMatchConfig.spawnInterval
+      sessionTime === defaultMatchConfig.sessionTime &&
+      spawnInterval === defaultMatchConfig.spawnInterval
         ? { ...defaultMatchConfig }
         : { sessionTime, spawnInterval },
   }
