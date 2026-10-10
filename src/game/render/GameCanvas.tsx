@@ -6,6 +6,7 @@ import { loadAssets, type GameAssets } from './assets.ts'
 import { ControlHint } from '../hud/ControlHint.tsx'
 import { Hud } from '../hud/Hud.tsx'
 import { createHudStore } from '../hud/store.ts'
+import type { PerfReport } from '../perf.ts'
 import type { MatchResult } from '../result.ts'
 import { TouchControls } from '../input/TouchControls.tsx'
 import { useTouchLayout } from '../input/useTouchLayout.ts'
@@ -36,7 +37,7 @@ export function GameCanvas({
 }: {
   config: GameConfig
   onMenu: () => void
-  onEnd: (result: MatchResult) => void
+  onEnd: (result: MatchResult, perf: PerfReport | null) => void
 }) {
   const [attempt, setAttempt] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -111,7 +112,7 @@ function Match({
   arena: GameAssets['arena']
   covered: boolean
   onMenu: () => void
-  onEnd: (result: MatchResult) => void
+  onEnd: (result: MatchResult, perf: PerfReport | null) => void
   onReady: () => void
   onFail: () => void
 }) {
@@ -221,14 +222,18 @@ function Match({
     const report = () => {
       if (reported) return
       if (store.getView().status !== 'ended') return
-      const world = sessionRef.current?.world
+      const session = sessionRef.current
+      const world = session?.world
       if (!world || !world.endReason) return
       reported = true
-      onEnd({
-        score: world.score,
-        played: world.time,
-        reason: world.endReason,
-      })
+      onEnd(
+        {
+          score: world.score,
+          played: world.time,
+          reason: world.endReason,
+        },
+        session?.perf?.report() ?? null,
+      )
     }
     return store.subscribe(report)
   }, [onEnd, store])

@@ -205,6 +205,9 @@ export function createRenderer(stage: Container, debug: boolean): Renderer {
         layWater()
         paintArena(arenaLayer, assets.tiles, frames, assets.arena)
         ballTexture = cannonBallTexture(assets.ships)
+        for (let i = 0; i < world.config.fx.ballPool; i += 1) {
+          ballSprites.push(makeBall(ballLayer, ballTexture))
+        }
         playerMark = createMark(shipsLayer, barLayer, playerStyle(assets.bars))
         enemyBars = enemyStyle(assets.bars)
         fx = createEffects(
@@ -604,10 +607,7 @@ function placeBalls(
   balls: readonly Ball[],
 ): void {
   while (sprites.length < balls.length) {
-    const sprite = new Sprite(texture)
-    sprite.anchor.set(0.5)
-    root.addChild(sprite)
-    sprites.push(sprite)
+    sprites.push(makeBall(root, texture))
   }
   for (let i = 0; i < sprites.length; i += 1) {
     const sprite = sprites[i]
@@ -620,6 +620,14 @@ function placeBalls(
     sprite.visible = true
     sprite.position.set(ball.x, ball.y)
   }
+}
+
+function makeBall(root: Container, texture: Texture): Sprite {
+  const sprite = new Sprite(texture)
+  sprite.anchor.set(0.5)
+  sprite.visible = false
+  root.addChild(sprite)
+  return sprite
 }
 
 function rideOf(sea: Sea, ship: Ship): Ride {

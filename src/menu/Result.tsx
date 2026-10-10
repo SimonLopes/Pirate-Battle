@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { RecordStatus } from '../api/useMatchSave.ts'
+import type { PerfReport } from '../game/perf.ts'
 import type { MatchResult } from '../game/result.ts'
 import { Button } from '../ui/Button.tsx'
 import { Panel } from '../ui/Panel.tsx'
@@ -7,12 +8,14 @@ import { useDialog } from '../ui/useDialog.ts'
 
 export function Result({
   result,
+  perf,
   status,
   onRetry,
   onPlay,
   onMenu,
 }: {
   result: MatchResult
+  perf: PerfReport | null
   status: RecordStatus
   onRetry: () => void
   onPlay: () => void
@@ -61,6 +64,7 @@ export function Result({
           >
             {recordLabel(status)}
           </p>
+          {perf && <PerfSummary perf={perf} />}
           <div className="menu-stack result-actions">
             {canShowRetry && (
               <Button variant="secondary" disabled={isSaving} onClick={retry}>
@@ -73,6 +77,39 @@ export function Result({
         </Panel>
       </div>
     </main>
+  )
+}
+
+function PerfSummary({ perf }: { perf: PerfReport }) {
+  const [copy, setCopy] = useState('')
+
+  const copyJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(perf, null, 2)).then(
+      () => setCopy('Copied'),
+      () => setCopy('Copy failed'),
+    )
+  }
+
+  return (
+    <section className="perf" aria-labelledby="perf-title">
+      <h2 id="perf-title" className="perf-title">
+        Performance
+      </h2>
+      <dl className="perf-stats">
+        <dt>Avg FPS</dt>
+        <dd>{perf.avgFps}</dd>
+        <dt>p95 frame</dt>
+        <dd>{perf.p95FrameMs} ms</dd>
+        <dt>Peak entities</dt>
+        <dd>{perf.peakEntities}</dd>
+      </dl>
+      <Button variant="secondary" compact onClick={copyJson}>
+        Copy JSON
+      </Button>
+      <p className="perf-status" role="status">
+        {copy}
+      </p>
+    </section>
   )
 }
 

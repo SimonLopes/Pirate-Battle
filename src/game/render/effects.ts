@@ -103,6 +103,8 @@ export function createEffects(
   const ensure = (fx: Fx): void => {
     if (pooled) return
     pooled = true
+    for (let i = 0; i < fx.flashPool; i += 1) flashes.push(makeFlash(layer))
+    for (let i = 0; i < fx.boomPool; i += 1) booms.push(makeBoom(layer))
     for (let i = 0; i < fx.trailPool; i += 1) puffs.push(makePuff(trailLayer))
     for (let i = 0; i < fx.splashPool; i += 1) rings.push(makeRing(wakeLayer))
     for (let i = 0; i < fx.wreckPool; i += 1) wrecks.push(makeWreck(shipLayer))
@@ -111,23 +113,23 @@ export function createEffects(
   }
 
   const spawnFlash = (ball: Ball): void => {
-    const flash = borrowFlash(layer, flashes)
+    const flash = free(flashes)
+    if (!flash) return
     const muzzle = muzzleOf(ball)
     flash.life = flashDuration
     flash.view.visible = true
     flash.view.alpha = 1
     flash.view.position.set(muzzle.x, muzzle.y)
     flash.view.rotation = muzzle.rotation
-    layer.addChild(flash.view)
   }
 
   const spawnBoom = (x: number, y: number): void => {
-    const boom = borrowBoom(layer, booms)
+    const boom = free(booms)
+    if (!boom) return
     boom.life = boomDuration
     boom.sprite.visible = true
     boom.sprite.position.set(x, y)
     paintBoom(boom, textures)
-    layer.addChild(boom.sprite)
   }
 
   const layTrail = (ball: Ball, fx: Fx): void => {
@@ -347,12 +349,21 @@ function muzzleOf(ball: Ball): { x: number; y: number; rotation: number } {
   }
 }
 
-function makeFlash(): Graphics {
+function makeFlash(layer: Container): Flash {
   const view = new Graphics()
   view.ellipse(14, 0, 14, 6).fill({ color: 0xffd56a, alpha: 0.95 })
   view.circle(0, 0, 7).fill({ color: 0xfff8e4 })
   view.visible = false
-  return view
+  layer.addChild(view)
+  return { view, life: 0 }
+}
+
+function makeBoom(layer: Container): Boom {
+  const sprite = new Sprite()
+  sprite.anchor.set(0.5)
+  sprite.visible = false
+  layer.addChild(sprite)
+  return { sprite, life: 0 }
 }
 
 function makePuff(layer: Container): Puff {
@@ -406,30 +417,6 @@ function sheetTexture(sheet: GameAssets['ships'], name: string): Texture {
 function pieceName(index: number, woodCount: number): string {
   if (index < woodCount) return `wood_${(index % 4) + 1}.png`
   return `crew_${((index - woodCount) % 6) + 1}.png`
-}
-
-function borrowFlash(layer: Container, flashes: Flash[]): Flash {
-  for (const flash of flashes) {
-    if (flash.life <= 0) return flash
-  }
-  const view = makeFlash()
-  layer.addChild(view)
-  const flash = { view, life: 0 }
-  flashes.push(flash)
-  return flash
-}
-
-function borrowBoom(layer: Container, booms: Boom[]): Boom {
-  for (const boom of booms) {
-    if (boom.life <= 0) return boom
-  }
-  const sprite = new Sprite()
-  sprite.anchor.set(0.5)
-  sprite.visible = false
-  layer.addChild(sprite)
-  const boom = { sprite, life: 0 }
-  booms.push(boom)
-  return boom
 }
 
 function paintBoom(boom: Boom, textures: GameAssets['effects']): void {

@@ -205,6 +205,51 @@ body {
   color: #ffd0c4;
 }
 
+.perf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.perf-title {
+  margin: 0;
+  color: #a8987a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.perf-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  margin: 0;
+  color: #d7c7a2;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-stats dt {
+  text-align: right;
+}
+
+.perf-stats dd {
+  margin: 0;
+  color: #f0d48a;
+  text-align: left;
+}
+
+.perf-status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #d7c7a2;
+  font-size: 12px;
+}
+
 .menu-stack {
   display: flex;
   flex-direction: column;

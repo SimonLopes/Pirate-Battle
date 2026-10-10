@@ -18,6 +18,7 @@ import {
   type TouchBinding,
   type TouchBindings,
 } from './input/touch.ts'
+import { createPerf, isPerfMode, type PerfRecorder } from './perf.ts'
 import { createRenderer, type Renderer } from './render/renderer.ts'
 import { isTestMode, matchSeed, track, untrack } from './testing.ts'
 
@@ -26,6 +27,7 @@ export class GameSession {
   readonly world: World
   readonly actions: Actions
   readonly touch: TouchBindings
+  readonly perf: PerfRecorder | null = isPerfMode ? createPerf() : null
 
   private readonly app: Application
   private readonly hud: HudStore
@@ -227,6 +229,11 @@ export class GameSession {
     }
 
     if (this.world.status === 'running') {
+      const { world } = this
+      this.perf?.frame(
+        this.app.ticker.elapsedMS,
+        1 + world.enemies.length + world.balls.length,
+      )
       const { fixedDt, maxSteps } = this.config
       this.accumulator += dt
 

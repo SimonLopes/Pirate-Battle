@@ -10,6 +10,7 @@ import {
   type PlayerOptions,
 } from './game/options.ts'
 import { loadResult, saveResult, type MatchResult } from './game/result.ts'
+import type { PerfReport } from './game/perf.ts'
 import { GameCanvas } from './game/render/GameCanvas.tsx'
 import { Menu } from './menu/Menu.tsx'
 import { Result } from './menu/Result.tsx'
@@ -22,6 +23,7 @@ type Screen = 'menu' | 'game' | 'result'
 function App() {
   const [result, setResult] = useState<MatchResult | null>(loadResult)
   const [matchRecord, setMatchRecord] = useState<MatchRecord | null>(null)
+  const [perf, setPerf] = useState<PerfReport | null>(null)
   const [screen, setScreen] = useState<Screen>('menu')
   const [options, setOptions] = useState(loadOptions)
   const [isOptionsUnsaved, setIsOptionsUnsaved] = useState(false)
@@ -45,7 +47,7 @@ function App() {
     setScreen('game')
   }
 
-  const finish = (next: MatchResult) => {
+  const finish = (next: MatchResult, report: PerfReport | null) => {
     const record = createPendingMatch({
       score: next.score,
       played: next.played,
@@ -57,6 +59,7 @@ function App() {
     matchSave.submit(record)
     saveResult(next)
     setMatchRecord(record)
+    setPerf(report)
     setResult(next)
     setScreen('result')
   }
@@ -79,6 +82,7 @@ function App() {
     view = (
       <Result
         result={result}
+        perf={perf}
         status={matchSave.statusFor(matchRecord)}
         onRetry={() => matchSave.retry(matchRecord)}
         onPlay={play}

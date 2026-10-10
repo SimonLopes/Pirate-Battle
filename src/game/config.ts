@@ -44,6 +44,9 @@ export type GameConfig = {
     sideSpacing: number
   }
   fx: {
+    ballPool: number
+    flashPool: number
+    boomPool: number
     trailLife: number
     trailGap: number
     trailPool: number
@@ -121,6 +124,9 @@ export const defaultConfig: GameConfig = {
     sideSpacing: 18,
   },
   fx: {
+    ballPool: 24,
+    flashPool: 8,
+    boomPool: 6,
     trailLife: 0.18,
     trailGap: 14,
     trailPool: 40,
