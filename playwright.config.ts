@@ -4,6 +4,7 @@ const previewUrl = 'http://127.0.0.1:4173'
 
 export default defineConfig({
   testDir: './e2e',
+  workers: 2,
   forbidOnly: !!process.env.CI,
   reporter: [['html', { open: 'never' }]],
   use: {
