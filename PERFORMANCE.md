@@ -6,6 +6,10 @@ I used the production build on Vercel, opened with `?perf=1`. While the match is
 
 Every run used a 180 s match with a spawn every 2 s, the hardest setting allowed, so enemies keep piling up.
 
+Raw numbers from each run are in reports/perf/.
+
+Last full Playwright run: 91 passed, 1 skipped (desktop and mobile). HTML report in reports/playwright/index.html.
+
 ## Desktop
 
 Ryzen 5 2600, Radeon RX 570 4GB, Windows 10 22H2, Chrome 154, monitor at 180 Hz.

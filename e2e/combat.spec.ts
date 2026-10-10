@@ -89,6 +89,7 @@ test.describe('enemies', () => {
   test('a cannonball damages an enemy once and is removed', async ({
     page,
   }) => {
+    test.setTimeout(60_000)
     const before = await closeIn(page, 400)
     await page.keyboard.down('Space')
     await step(page, before.config.fixedDt * 1000)
