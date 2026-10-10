@@ -22,6 +22,7 @@ function spawnAll(seed: number, ticks: number): World {
     defaultConfig,
     arenaColliders(map),
     createRng(seed),
+    createRng(seed),
     map.spawns.player,
   )
   for (let i = 0; i < ticks; i += 1) {

@@ -5,6 +5,7 @@ import {
   type FormEvent,
   type RefObject,
 } from 'react'
+import { play } from '../audio.ts'
 import { sessionDurationLimits, spawnIntervalLimits } from '../game/config.ts'
 import {
   captainNameError,
@@ -40,6 +41,7 @@ export function Options({
   const [fullscreenOnMobile, setFullscreenOnMobile] = useState(
     saved.fullscreenOnMobile,
   )
+  const [muted, setMuted] = useState(saved.muted)
   const [nameError, setNameError] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [spawnError, setSpawnError] = useState<string | null>(null)
@@ -69,6 +71,7 @@ export function Options({
       sessionDuration: Number(sessionTime.trim()),
       spawnInterval: Number(spawnTime.trim()),
       fullscreenOnMobile,
+      muted,
     }
     onSave(next)
     onBack()
@@ -79,7 +82,12 @@ export function Options({
       className="menu-panel-options"
       actions={
         <>
-          <Button id="options-back" variant="secondary" onClick={onBack}>
+          <Button
+            id="options-back"
+            variant="secondary"
+            sound="ui_back"
+            onClick={onBack}
+          >
             Back
           </Button>
           <Button id="options-save" type="submit" form="options-form">
@@ -159,6 +167,18 @@ export function Options({
             />
             <FullscreenButton />
           </div>
+        </div>
+        <div className="option-field">
+          <label className="option-label" htmlFor="mute-sound">
+            Mute sound
+          </label>
+          <input
+            id="mute-sound"
+            className="option-check"
+            type="checkbox"
+            checked={muted}
+            onChange={(event) => setMuted(event.target.checked)}
+          />
         </div>
       </form>
     </Panel>
@@ -251,7 +271,10 @@ function StepButton({
       className="step-button"
       aria-label={label}
       disabled={disabled}
-      onClick={onClick}
+      onClick={() => {
+        play('ui_click')
+        onClick()
+      }}
     >
       <img src={icon} alt="" draggable={false} />
     </button>

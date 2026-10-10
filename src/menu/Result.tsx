@@ -72,7 +72,9 @@ export function Result({
               </Button>
             )}
             <Button onClick={onPlay}>Play again</Button>
-            <Button onClick={onMenu}>Main menu</Button>
+            <Button sound="ui_back" onClick={onMenu}>
+              Main menu
+            </Button>
           </div>
         </Panel>
       </div>

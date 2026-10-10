@@ -17,6 +17,24 @@ export type MatchStatus = 'running' | 'paused' | 'ended'
 
 export type EndReason = 'time' | 'death'
 
+const fireCues = ['cannon_fire_1', 'cannon_fire_2', 'cannon_fire_3'] as const
+const woodCues = ['ship_wood_hit_1', 'ship_wood_hit_2'] as const
+const waterCues = ['cannonball_water_hit_1', 'cannonball_water_hit_2'] as const
+const explosionCues = ['ship_explosion_1', 'ship_explosion_2'] as const
+
+export type Cue =
+  | (typeof fireCues)[number]
+  | (typeof woodCues)[number]
+  | (typeof waterCues)[number]
+  | (typeof explosionCues)[number]
+  | 'cannon_broadside'
+  | 'ship_collision'
+  | 'score_point'
+  | 'ship_sinking'
+  | 'game_complete'
+  | 'time_warning'
+  | 'health_low'
+
 export type World = {
   config: GameConfig
   time: number
@@ -32,12 +50,15 @@ export type World = {
   rightCooldown: number
   spawnTimer: number
   rng: Rng
+  cueRng: Rng
+  cues: Cue[]
 }
 
 export function createWorld(
   config: GameConfig,
   colliders: Collider[],
   rng: Rng,
+  cueRng: Rng,
   playerAt: SpawnPoint,
 ): World {
   const player: Ship = {
@@ -63,6 +84,8 @@ export function createWorld(
     rightCooldown: 0,
     spawnTimer: config.spawnInterval,
     rng,
+    cueRng,
+    cues: [],
   }
   const chaserAt = pickSpawn(
     field,
@@ -106,6 +129,8 @@ export function step(world: World, dt: number, actions: Actions): void {
 
   const slice = Math.min(dt, remaining)
   const stats = world.config.ships.player
+  const hpBefore = world.player.hp
+  const timeBefore = world.time
   move(
     world.player,
     slice,
@@ -122,14 +147,17 @@ export function step(world: World, dt: number, actions: Actions): void {
     slice,
     actions.fireFront,
     cannon.frontCooldown,
-    () => launch(world.balls, world.player, ball, 'player'),
+    () => {
+      launch(world.balls, world.player, ball, 'player')
+      world.cues.push(world.cueRng.pick(fireCues))
+    },
   )
   world.leftCooldown = tickCannon(
     world.leftCooldown,
     slice,
     actions.fireLeft,
     cannon.sideCooldown,
-    () =>
+    () => {
       launchSide(
         world.balls,
         world.player,
@@ -137,14 +165,16 @@ export function step(world: World, dt: number, actions: Actions): void {
         cannon.sideSpacing,
         -1,
         'player',
-      ),
+      )
+      world.cues.push('cannon_broadside')
+    },
   )
   world.rightCooldown = tickCannon(
     world.rightCooldown,
     slice,
     actions.fireRight,
     cannon.sideCooldown,
-    () =>
+    () => {
       launchSide(
         world.balls,
         world.player,
@@ -152,11 +182,23 @@ export function step(world: World, dt: number, actions: Actions): void {
         cannon.sideSpacing,
         1,
         'player',
-      ),
+      )
+      world.cues.push('cannon_broadside')
+    },
   )
+  const flying = world.balls.length
   stepBalls(world.balls, slice, ball, world.config.arena, world.colliders)
-  world.score += strike(world.balls, world.player, world.enemies, ball.radius)
+  if (world.balls.length < flying) world.cues.push(world.cueRng.pick(waterCues))
+  const live = world.balls.length
+  const scored = strike(world.balls, world.player, world.enemies, ball.radius)
+  world.score += scored
+  if (world.balls.length < live) world.cues.push(world.cueRng.pick(woodCues))
+  for (let kill = 0; kill < scored; kill += 1) {
+    world.cues.push(world.cueRng.pick(explosionCues), 'score_point')
+  }
   if (world.player.hp > 0) {
+    const fleet = world.enemies.length
+    const shots = world.balls.length
     stepEnemies(
       world.enemies,
       world.player,
@@ -165,10 +207,15 @@ export function step(world: World, dt: number, actions: Actions): void {
       world.config,
       world.colliders,
     )
+    if (world.balls.length > shots) world.cues.push(world.cueRng.pick(fireCues))
+    for (let ram = world.enemies.length; ram < fleet; ram += 1) {
+      world.cues.push('ship_collision', world.cueRng.pick(explosionCues))
+    }
     stepSpawns(world, slice)
   }
   world.time += slice
   if (slice < dt || world.time >= limit) world.time = limit
+  alarm(world, hpBefore, timeBefore)
   if (world.player.hp <= 0) {
     endMatch(world, 'death')
     return
@@ -180,6 +227,20 @@ function endMatch(world: World, reason: EndReason): void {
   world.status = 'ended'
   world.endReason = reason
   if (reason === 'death') world.player.hp = 0
+  world.cues.push(reason === 'death' ? 'ship_sinking' : 'game_complete')
+}
+
+function alarm(world: World, hpBefore: number, timeBefore: number): void {
+  const { alerts, sessionDuration, ships } = world.config
+  const lowHp = ships.player.hp * alerts.lowHp
+  const hp = world.player.hp
+  if (hp > 0 && hp < lowHp && hpBefore >= lowHp) {
+    world.cues.push('health_low')
+  }
+  const warnAt = sessionDuration - alerts.timeLeft
+  if (timeBefore < warnAt && world.time >= warnAt) {
+    world.cues.push('time_warning')
+  }
 }
 
 function tickCannon(

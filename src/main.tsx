@@ -2,12 +2,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { installAudio } from './audio.ts'
 import { installTestHooks } from './game/testing.ts'
 import { worker } from './mocks/browser.ts'
 
 const queryClient = new QueryClient()
 
 installTestHooks()
+installAudio()
 
 async function start(): Promise<void> {
   let isApiReady = true
@@ -27,7 +29,7 @@ async function start(): Promise<void> {
       <QueryClientProvider client={queryClient}>
         {!isApiReady && (
           <p className="api-notice" role="alert">
-            Offline API unavailable
+            Ranking is unavailable right now
           </p>
         )}
         <App />

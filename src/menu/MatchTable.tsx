@@ -6,6 +6,7 @@ import {
 import { isAxiosError } from 'axios'
 import { useState, type ReactNode } from 'react'
 import type { MatchPage, MatchRecord, PageParams } from '../api/types.ts'
+import { play } from '../audio.ts'
 import { Button } from '../ui/Button.tsx'
 
 const pageSize = 5
@@ -96,7 +97,10 @@ export function MatchTable({
               className="step-button ranking-step"
               aria-label="Previous page"
               disabled={page <= 1}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => {
+                play('ui_click')
+                setPage((current) => current - 1)
+              }}
             >
               <img src={prevArt} alt="" draggable={false} />
             </button>
@@ -108,7 +112,10 @@ export function MatchTable({
               className="step-button ranking-step"
               aria-label="Next page"
               disabled={query.isPlaceholderData || page >= pages}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => {
+                play('ui_click')
+                setPage((current) => current + 1)
+              }}
             >
               <img src={nextArt} alt="" draggable={false} />
             </button>

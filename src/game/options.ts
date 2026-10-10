@@ -15,12 +15,14 @@ export type PlayerOptions = {
   sessionDuration: number
   spawnInterval: number
   fullscreenOnMobile: boolean
+  muted: boolean
 }
 
 type StoredOptions = {
   sessionDuration: number
   spawnInterval: number
   fullscreenOnMobile?: boolean
+  muted?: boolean
   captainName?: unknown
 }
 
@@ -33,6 +35,7 @@ export function loadOptions(): PlayerOptions {
     sessionDuration: stored?.sessionDuration ?? defaultConfig.sessionDuration,
     spawnInterval: stored?.spawnInterval ?? defaultConfig.spawnInterval,
     fullscreenOnMobile: stored?.fullscreenOnMobile ?? true,
+    muted: stored?.muted ?? false,
   }
   if (stored?.captainName !== captainName) saveOptions(options)
   return options
@@ -116,8 +119,11 @@ function isStoredOptions(value: unknown): value is StoredOptions {
   if (!isRecord(value)) return false
   if (!fits(value.sessionDuration, sessionDurationLimits)) return false
   if (!fits(value.spawnInterval, spawnIntervalLimits)) return false
-  const flag = value.fullscreenOnMobile
-  return flag === undefined || typeof flag === 'boolean'
+  return isFlag(value.fullscreenOnMobile) && isFlag(value.muted)
+}
+
+function isFlag(value: unknown): value is boolean | undefined {
+  return value === undefined || typeof value === 'boolean'
 }
 
 function fits(

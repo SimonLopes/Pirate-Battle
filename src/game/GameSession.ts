@@ -1,4 +1,5 @@
 import { UPDATE_PRIORITY, type Application } from 'pixi.js'
+import { ambience, play, playCue, stopGame, stopLoops } from '../audio.ts'
 import { arenaColliders, type ArenaMap } from './arena.ts'
 import type { GameConfig } from './config.ts'
 import { idleActions, type Actions } from './core/actions.ts'
@@ -63,6 +64,7 @@ export class GameSession {
       this.config,
       arenaColliders(arena),
       rng,
+      createRng(seed),
       arena.spawns.player,
     )
     this.actions = idleActions()
@@ -96,6 +98,7 @@ export class GameSession {
     this.app.ticker.start()
     this.publish()
     this.hud.announce('Match started')
+    play('game_start')
     if (document.hidden) this.pause()
   }
 
@@ -108,6 +111,8 @@ export class GameSession {
     this.discard = true
     this.keyboard?.clear()
     this.app.ticker.stop()
+    stopGame()
+    play('game_pause')
     this.publish()
     this.hud.announce('Paused')
   }
@@ -121,6 +126,7 @@ export class GameSession {
     if (this.world.status === 'paused') resumeMatch(this.world)
     this.ticking = true
     this.app.ticker.start()
+    play('game_resume')
     this.publish()
     this.hud.announce('')
   }
@@ -214,6 +220,7 @@ export class GameSession {
     document.removeEventListener('visibilitychange', this.onHide)
     window.removeEventListener('blur', this.onBlur)
     this.renderer.destroy()
+    stopGame()
   }
 
   private readonly onTick = (): void => {
@@ -260,12 +267,21 @@ export class GameSession {
     if (!this.ticking && this.world.status !== 'ended') return
     if (!this.destroyed) {
       this.renderer.draw(this.world, dt)
+      this.sound()
     }
     this.publish()
     this.publishStick()
     if (this.endAnnounced || this.world.status !== 'ended') return
     this.endAnnounced = true
     this.hud.announce('Match over')
+  }
+
+  private sound(): void {
+    const { world } = this
+    for (const cue of world.cues) playCue(cue)
+    world.cues.length = 0
+    if (world.status === 'running') ambience(this.actions.thrust === 1)
+    else stopLoops()
   }
 
   private publish(): void {

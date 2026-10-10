@@ -117,11 +117,15 @@ const hidden: CSSProperties = {
 
 export function Hud({
   store,
+  muted,
+  onMute,
   onResume,
   onMenu,
   barRef,
 }: {
   store: HudStore
+  muted: boolean
+  onMute: (muted: boolean) => void
   onResume: () => void
   onMenu: () => void
   barRef: Ref<HTMLDivElement>
@@ -130,7 +134,13 @@ export function Hud({
     <>
       <HudScore store={store} barRef={barRef} />
       <HudNotice store={store} />
-      <PauseDialog store={store} onResume={onResume} onMenu={onMenu} />
+      <PauseDialog
+        store={store}
+        muted={muted}
+        onMute={onMute}
+        onResume={onResume}
+        onMenu={onMenu}
+      />
     </>
   )
 }
@@ -202,10 +212,14 @@ function HudNotice({ store }: { store: HudStore }) {
 
 function PauseDialog({
   store,
+  muted,
+  onMute,
   onResume,
   onMenu,
 }: {
   store: HudStore
+  muted: boolean
+  onMute: (muted: boolean) => void
   onResume: () => void
   onMenu: () => void
 }) {
@@ -235,12 +249,25 @@ function PauseDialog({
             Paused
           </h2>
           <p id="pause-hint" className="menu-copy">
-            Ready when you are.
+            Press Play to start
           </p>
-
+          <div className="option-field">
+            <label className="option-label" htmlFor="pause-mute">
+              Mute sound
+            </label>
+            <input
+              id="pause-mute"
+              className="option-check"
+              type="checkbox"
+              checked={muted}
+              onChange={(event) => onMute(event.target.checked)}
+            />
+          </div>
           <div className="menu-stack">
-            <Button onClick={onResume}>Resume</Button>
-            <Button variant="secondary" onClick={onMenu}>
+            <Button sound={null} onClick={onResume}>
+              Resume
+            </Button>
+            <Button variant="secondary" sound="ui_back" onClick={onMenu}>
               Main menu
             </Button>
           </div>

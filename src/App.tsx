@@ -1,7 +1,14 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { createPendingMatch } from './api/pending.ts'
 import { useMatchSave } from './api/useMatchSave.ts'
 import type { MatchRecord } from './api/types.ts'
+import { setMuted } from './audio.ts'
 import { enterFullscreenOnTouch } from './game/fullscreen.ts'
 import {
   configFromOptions,
@@ -41,6 +48,10 @@ function App() {
     document.getElementById('menu-play')?.focus()
   }, [screen])
 
+  useEffect(() => {
+    setMuted(options.muted)
+  }, [options.muted])
+
   const play = () => {
     enterFullscreenOnTouch(options.fullscreenOnMobile)
     setMatchConfig(configFromOptions(options))
@@ -74,6 +85,8 @@ function App() {
     view = (
       <GameCanvas
         config={matchConfig}
+        muted={options.muted}
+        onMute={(muted) => save({ ...options, muted })}
         onMenu={() => setScreen('menu')}
         onEnd={finish}
       />

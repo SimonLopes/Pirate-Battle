@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "spritesheet": "node scripts/spritesheet.mjs",
-    "test": "node --experimental-strip-types --test src/**/*.test.ts",
-    "e2e": "playwright test"
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
+    "e2e": "playwright test",
+    "engines": { "node": ">=22.6" }
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",

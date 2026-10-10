@@ -1,6 +1,6 @@
 import type { World } from './core/world.ts'
 
-export type Snapshot = Omit<World, 'rng'>
+export type Snapshot = Omit<World, 'rng' | 'cueRng' | 'cues'>
 
 type TestHooks = {
   getState(): Snapshot | null

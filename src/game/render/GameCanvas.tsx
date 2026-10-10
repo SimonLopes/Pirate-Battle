@@ -32,10 +32,14 @@ function fitStage(
 
 export function GameCanvas({
   config,
+  muted,
+  onMute,
   onMenu,
   onEnd,
 }: {
   config: GameConfig
+  muted: boolean
+  onMute: (muted: boolean) => void
   onMenu: () => void
   onEnd: (result: MatchResult, perf: PerfReport | null) => void
 }) {
@@ -86,6 +90,8 @@ export function GameCanvas({
           config={config}
           arena={assets.arena}
           covered={!playing}
+          muted={muted}
+          onMute={onMute}
           onMenu={onMenu}
           onEnd={onEnd}
           onReady={begin}
@@ -103,6 +109,8 @@ function Match({
   config,
   arena,
   covered,
+  muted,
+  onMute,
   onMenu,
   onEnd,
   onReady,
@@ -111,6 +119,8 @@ function Match({
   config: GameConfig
   arena: GameAssets['arena']
   covered: boolean
+  muted: boolean
+  onMute: (muted: boolean) => void
   onMenu: () => void
   onEnd: (result: MatchResult, perf: PerfReport | null) => void
   onReady: () => void
@@ -255,6 +265,8 @@ function Match({
       <Hud
         store={store}
         barRef={barRef}
+        muted={muted}
+        onMute={onMute}
         onResume={() => {
           sessionRef.current?.resume()
         }}

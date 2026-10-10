@@ -43,6 +43,10 @@ export type GameConfig = {
     sideCooldown: number
     sideSpacing: number
   }
+  alerts: {
+    timeLeft: number
+    lowHp: number
+  }
   fx: {
     ballPool: number
     flashPool: number
@@ -122,6 +126,10 @@ export const defaultConfig: GameConfig = {
     frontCooldown: 0.45,
     sideCooldown: 1.2,
     sideSpacing: 18,
+  },
+  alerts: {
+    timeLeft: 10,
+    lowHp: 0.25,
   },
   fx: {
     ballPool: 24,

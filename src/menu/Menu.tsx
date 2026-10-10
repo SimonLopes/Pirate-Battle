@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { MatchConfig } from '../api/types.ts'
+import { play } from '../audio.ts'
 import type { PlayerOptions } from '../game/options.ts'
 import type { MatchResult } from '../game/result.ts'
 import { Button } from '../ui/Button.tsx'
@@ -136,6 +137,7 @@ function Home({
                 id="menu-help"
                 compact
                 variant="secondary"
+                sound="ui_open"
                 onClick={() => setHelp(true)}
               >
                 How to play
@@ -151,7 +153,13 @@ function Home({
         alt="Jungle Gaming"
         draggable={false}
       />
-      <HowToPlay open={help} onClose={() => setHelp(false)} />
+      <HowToPlay
+        open={help}
+        onClose={() => {
+          play('ui_close')
+          setHelp(false)
+        }}
+      />
     </>
   )
 }
@@ -176,7 +184,9 @@ function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
           </h2>
           <Controls />
           <div className="menu-stack">
-            <Button onClick={onClose}>Close</Button>
+            <Button sound={null} onClick={onClose}>
+              Close
+            </Button>
           </div>
         </Panel>
       </div>
@@ -209,7 +219,9 @@ function Log({
           {tab === 'ranking' ? <Ranking config={config} /> : <History />}
         </div>
         <div className="menu-stack log-back">
-          <Button onClick={onMenu}>Main menu</Button>
+          <Button sound="ui_back" onClick={onMenu}>
+            Main menu
+          </Button>
         </div>
       </div>
     </Panel>
