@@ -15,7 +15,6 @@ import { LastResult } from './Result.tsx'
 
 const titleArt = '/assets/png/default/ui/menu/title_pirate_battle.png'
 const shipArt = '/assets/png/default/ships/ship_2.png'
-const logoArt = '/assets/logo_jungle_gaming.svg'
 
 type LogTab = 'ranking' | 'history'
 
@@ -147,12 +146,7 @@ function Home({
         </div>
       </Panel>
       <NetworkPanel />
-      <img
-        className="menu-logo"
-        src={logoArt}
-        alt="Jungle Gaming"
-        draggable={false}
-      />
+      
       <HowToPlay
         open={help}
         onClose={() => {

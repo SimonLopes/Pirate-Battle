@@ -104,14 +104,6 @@ body {
   white-space: nowrap;
 }
 
-.menu-logo {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  width: 96px;
-  height: auto;
-  pointer-events: none;
-}
 
 .last-result {
   margin: 0 0 12px;
@@ -1236,12 +1228,6 @@ body {
 
   .option-notice {
     margin-top: 8px;
-  }
-
-  .menu-logo {
-    right: max(8px, env(safe-area-inset-right));
-    bottom: max(8px, env(safe-area-inset-bottom));
-    width: 52px;
   }
 
   .network-debug {

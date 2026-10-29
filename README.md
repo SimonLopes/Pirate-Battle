@@ -2,7 +2,7 @@
 
 Live: https://pirate-battle-simon.vercel.app/
 
-A small top-down naval combat game I built for the Jungle Gaming front-end test. The menus and HUD are React, the arena is PixiJS, and the ranking and history API is mocked with MSW, also in the deployed build.
+A small top-down naval combat game built as a front-end technical challenge. Game assets are credited in CREDITS.md. The menus and HUD are React, the arena is PixiJS, and the ranking and history API is mocked with MSW, also in the deployed build.
 
 ## Setup
 
